@@ -5,22 +5,46 @@ import CategorySelector from './components/CategorySelector';
 import ImageGenerator from './components/ImageGenerator';
 import ImageResult from './components/ImageResult';
 import LoadingIndicator from './components/LoadingIndicator';
+import History from './components/History';
+import PaymentModal from './components/PaymentModal';
+import SubscriptionModal from './components/SubscriptionModal';
+import { isSubscriptionActive, getRemainingImages, useImage } from './services/subscriptionService';
 import { generateProductImages } from './services/geminiService';
-import { useLocalization } from './contexts/LocalizationContext';
+import { saveToHistory } from './utils/historyManager';
+import { signOut } from './services/supabase';
+import { LocalizationProvider, useLocalization } from './contexts/LocalizationContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Auth from './components/Auth';
 
-const App: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<string>('category'); // category, generator, loading, result
+const AppContent: React.FC = () => {
+  const { user, loading } = useAuth();
+  const [currentStep, setCurrentStep] = useState<string>('category');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [lastGenerationData, setLastGenerationData] = useState<Record<string, string | File> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { t, setLocale, locale } = useLocalization();
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 });
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<Record<string, string | File> | null>(null);
 
   useEffect(() => {
     document.documentElement.lang = locale;
     document.title = t('app_title');
   }, [locale, t]);
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500"></div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Auth />;
+  }
 
   const handleCategorySelect = (category: Category) => {
     setSelectedCategory(category);
@@ -34,25 +58,57 @@ const App: React.FC = () => {
 
   const handleGenerate = async (formData: Record<string, string | File>) => {
     if (!selectedCategory) return;
+    
+    const numImagesStr = (formData.numImages as string) || 'option_numImages_3';
+    const numImages = parseInt(numImagesStr.split('_').pop() || '3', 10);
+    
+    // Check subscription status
+    if (isSubscriptionActive()) {
+      const remaining = getRemainingImages();
+      if (remaining >= numImages) {
+        // Use subscription images
+        for (let i = 0; i < numImages; i++) {
+          useImage();
+        }
+        setPendingFormData(formData);
+        handlePaymentSuccess();
+        return;
+      } else {
+        alert(`${t('subscription_remaining')}: ${remaining}`);
+        return;
+      }
+    }
+    
+    // Show subscription modal first
+    setShowSubscriptionModal(true);
+  };
+  
+  const handlePaymentSuccess = async () => {
+    if (!selectedCategory || !pendingFormData) return;
+    
     setCurrentStep('loading');
     setGeneratedImages([]);
     setError(null);
-    setLastGenerationData(formData);
+    setLastGenerationData(pendingFormData);
     
-    const numImagesStr = (formData.numImages as string) || 'option_numImages_3';
+    const numImagesStr = (pendingFormData.numImages as string) || 'option_numImages_3';
     const numImages = parseInt(numImagesStr.split('_').pop() || '3', 10);
     
     setGenerationProgress({ current: 0, total: numImages });
 
     try {
-      const images = await generateProductImages(selectedCategory, formData, numImages, handleProgress);
+      const images = await generateProductImages(selectedCategory, pendingFormData, numImages, handleProgress);
       setGeneratedImages(images);
+      saveToHistory(t(selectedCategory.nameKey), images, pendingFormData);
       setCurrentStep('result');
+      alert(t('payment_success'));
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(`${t('error_generation_failed')} ${errorMessage}`);
       setCurrentStep('generator');
+    } finally {
+      setPendingFormData(null);
     }
   };
 
@@ -74,6 +130,20 @@ const App: React.FC = () => {
     if (lastGenerationData) {
       handleGenerate(lastGenerationData);
     }
+  };
+  
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPendingFormData(null);
+  };
+  
+  const handleSubscriptionSuccess = () => {
+    setShowSubscriptionModal(false);
+    alert(t('payment_success'));
+  };
+  
+  const handleViewHistory = () => {
+    setCurrentStep('history');
   };
 
   const renderContent = () => {
@@ -97,41 +167,86 @@ const App: React.FC = () => {
         return <LoadingIndicator progress={generationProgress} />;
       case 'result':
         return <ImageResult images={generatedImages} onBack={handleBackToGenerator} onGenerateAgain={handleGenerateAgain} onGoHome={handleBackToCategories} />;
+      case 'history':
+        return <History onBack={handleBackToCategories} />;
       default:
         return <CategorySelector categories={CATEGORIES} onSelect={handleCategorySelect} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 sm:p-6 lg:p-8">
-       <header className="w-full max-w-5xl mb-8">
-        <div className="flex justify-between items-center">
-            <div></div>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4 py-6 sm:px-6 lg:px-8">
+       <header className="w-full max-w-5xl mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="hidden sm:block flex-1"></div>
             <div onClick={handleBackToCategories} className="cursor-pointer inline-block group text-center" title={t('tooltip_go_home')}>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
                 {t('app_header_new')} 💼
               </h1>
-              <p className="mt-2 text-md sm:text-lg text-gray-600">
+              <p className="mt-2 text-sm sm:text-md lg:text-lg text-gray-600">
                 {t('app_subheader_new')}
               </p>
             </div>
-            <div className="flex space-x-2">
-                <button onClick={() => setLocale('ko')} className={`px-3 py-1 text-sm rounded-md ${locale === 'ko' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>KO</button>
-                <button onClick={() => setLocale('en')} className={`px-3 py-1 text-sm rounded-md ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>EN</button>
-                <button onClick={() => setLocale('ja')} className={`px-3 py-1 text-sm rounded-md ${locale === 'ja' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>JA</button>
+            <div className="flex items-center space-x-2 flex-1 sm:justify-end justify-center">
+                <button 
+                  onClick={handleViewHistory}
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                >
+                  {t('view_history')}
+                </button>
+                <button 
+                  onClick={() => setShowSubscriptionModal(true)}
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition"
+                >
+                  {isSubscriptionActive() ? `${getRemainingImages()} ${t('subscription_remaining')}` : t('subscription_subscribe')}
+                </button>
+                <button 
+                  onClick={async () => {
+                    const { error } = await signOut();
+                    if (error) console.error('Sign out error:', error);
+                  }}
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md bg-red-100 text-red-700 hover:bg-red-200 transition"
+                >
+                  {t('sign_out')}
+                </button>
+                <button onClick={() => setLocale('ar')} className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md ${locale === 'ar' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>AR</button>
+                <button onClick={() => setLocale('en')} className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>EN</button>
             </div>
         </div>
       </header>
       <main className="w-full flex justify-center">
         {renderContent()}
       </main>
-      <footer className="w-full text-center mt-12 text-gray-500 text-sm">
-        <p>
+      <footer className="w-full text-center mt-8 sm:mt-12 px-4 text-gray-500 text-xs sm:text-sm">
+        <p className="break-words">
             {t('footer_made_by')} <a href="https://www.threads.net/@choi.openai" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:underline">@choi.openai</a>
         </p>
          <p className="mt-1">{t('footer_follow_cta')}</p>
       </footer>
+      
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={handleClosePaymentModal}
+        onPaymentSuccess={handlePaymentSuccess}
+        numImages={pendingFormData ? parseInt((pendingFormData.numImages as string || 'option_numImages_3').split('_').pop() || '3', 10) : 3}
+      />
+      
+      <SubscriptionModal
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        onSubscribe={handleSubscriptionSuccess}
+      />
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <LocalizationProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LocalizationProvider>
   );
 };
 

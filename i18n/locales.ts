@@ -1,12 +1,127 @@
 
-export type Locale = 'ko' | 'en' | 'ja';
+export type Locale = 'ar' | 'en'; // | 'ko' | 'ja';
 
 export type Translations = {
   [key: string]: string | Translations;
 };
 
 export const locales: { [key in Locale]: Translations } = {
-  ko: {
+  ar: {
+    app_title: 'حل الأعمال بالذكاء الاصطناعي للعاملين لحسابهم الخاص',
+    app_header: 'استوديو صور المنتجات بالذكاء الاصطناعي',
+    app_header_new: 'حل الأعمال بالذكاء الاصطناعي للعاملين لحسابهم الخاص',
+    app_subheader: 'ارفع صورك وحولها إلى نتائج احترافية الجودة.',
+    app_subheader_new: 'عزيزي صاحب العمل، الأوقات صعبة، أليس كذلك؟ الذكاء الاصطناعي هنا ليكون شريكك الموثوق.',
+    tooltip_go_home: 'العودة للرئيسية',
+    footer_made_by: 'صنع بواسطة:',
+    footer_follow_cta: 'متابعتك دعم كبير لبناء خدمات أفضل. شكراً لك!',
+    
+    category_selector_title: 'ما نوع الصورة التي تحتاجها؟',
+    category_selector_subtitle: 'يرجى اختيار فئة تناسب عملك.',
+    
+    generator_title_suffix: 'توليد الصور',
+    alert_upload_required_image: 'يرجى رفع الصورة المطلوبة.',
+    alert_upload_for_suggestion: 'يجب رفع الصورة الرئيسية أولاً للحصول على اقتراحات الذكاء الاصطناعي.',
+    suggestion_box_title: 'تواجه صعوبة في الإدخال؟',
+    suggestion_box_description: 'ارفع صورتك الرئيسية واضغط على الزر أدناه. سيملأ الذكاء الاصطناعي الحقول تلقائياً.',
+    button_ai_suggest: 'احصل على اقتراحات الذكاء الاصطناعي',
+    button_suggesting: 'جاري الاقتراح...',
+    
+    result_title: 'نتائج الصور المولدة',
+    result_image_alt_prefix: 'النتيجة المولدة',
+    button_download: 'تحميل',
+    button_back_to_home: 'العودة للرئيسية',
+    button_edit_options: 'تعديل الخيارات',
+    button_regenerate: 'إعادة التوليد بنفس الخيارات',
+    alert_download_failed: 'فشل في تحميل الصورة.',
+
+    loading_message_1: 'الذكاء الاصطناعي يتصور اللقطة المثالية...',
+    loading_message_2: 'تعديل الإضاءة، لحظة واحدة...',
+    loading_message_3: 'العثور على التركيب المثالي...',
+    loading_message_4: 'عرض التفاصيل...',
+    loading_message_5: 'تقريباً انتهينا! استعد لنتائج مذهلة!',
+    loading_submessage: 'قد يستغرق توليد الصور 1-2 دقيقة.',
+    loading_progress: 'توليد الصور... ({current}/{total})',
+
+    error_generation_failed: 'فشل في توليد الصور.',
+    error_suggestion_failed: 'فشل في توليد اقتراحات الذكاء الاصطناعي.',
+    
+    history_title: 'السجل',
+    history_empty: 'لا توجد صور محفوظة بعد',
+    clear_history: 'مسح السجل',
+    confirm_clear_history: 'هل أنت متأكد من مسح جميع الصور المحفوظة؟',
+    view_history: 'عرض السجل',
+    
+    auth_welcome: 'مرحباً بك',
+    auth_description: 'سجل الدخول لحفظ صورك والوصول إليها من أي جهاز',
+    auth_google_signin: 'تسجيل الدخول بجوجل',
+    auth_terms: 'بالمتابعة، أنت توافق على شروط الخدمة',
+    auth_error: 'حدث خطأ في تسجيل الدخول',
+    sign_out: 'تسجيل الخروج',
+    auth_signin: 'تسجيل الدخول',
+    auth_signup: 'إنشاء حساب',
+    auth_email: 'البريد الإلكتروني',
+    auth_password: 'كلمة المرور',
+    auth_email_placeholder: 'أدخل بريدك الإلكتروني',
+    auth_password_placeholder: 'أدخل كلمة المرور',
+    auth_loading: 'جاري التحميل...',
+    auth_or: 'أو',
+    auth_have_account: 'لديك حساب بالفعل؟ سجل الدخول',
+    auth_need_account: 'تحتاج حساب؟ أنشئ حساباً جديداً',
+    auth_signup_success: 'تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.',
+    
+    payment_title: 'الدفع',
+    payment_item: 'العنصر',
+    payment_images: 'صور',
+    payment_price_per_image: 'السعر لكل صورة',
+    payment_total: 'المجموع',
+    payment_currency: 'دينار',
+    payment_cancel: 'إلغاء',
+    payment_pay: 'ادفع',
+    payment_processing: 'جاري المعالجة...',
+    payment_error: 'حدث خطأ في الدفع',
+    payment_success: 'تم الدفع بنجاح!',
+    
+    subscription_title: 'اختر خطتك',
+    subscription_per_month: 'شهرياً',
+    subscription_unlimited: 'غير محدود',
+    subscription_subscribe: 'اشتراك',
+    subscription_note: 'جميع الخطط تتجدد شهرياً. يمكن الإلغاء في أي وقت.',
+    subscription_active: 'اشتراك نشط',
+    subscription_remaining: 'صورة متبقية',
+    subscription_expired: 'انتهى الاشتراك',
+    subscription_upgrade: 'ترقية الخطة',
+
+    button_upload_file: 'رفع ملف',
+    button_select_other_file: 'اختر ملف آخر',
+    text_or_drag: 'أو اسحب وأفلت',
+    text_max_size: 'الحد الأقصى 10 ميجابايت',
+    button_generate: 'توليد بالذكاء الاصطناعي',
+    aria_label_remove_image: 'إزالة الصورة',
+    aria_label_back_to_categories: 'العودة لاختيار الفئة',
+
+    option_custom: "إدخال مخصص",
+    
+    category_viral_name: "المحتوى الفيروسي والميمز",
+    category_viral_desc: "حول صورك إلى تماثيل ثلاثية الأبعاد وشخصيات أنمي ومحتوى ممتع آخر.",
+    category_campaign_name: "تنسيق المنتجات والحملات (متقدم)",
+    category_campaign_desc: "إنشاء مشاهد معقدة ونماذج أولية وحملات إعلانية بتعليمات مفصلة ومنظمة.",
+    category_cafe_name: "مطعم / مقهى",
+    category_cafe_desc: "ارفع صور القائمة وحولها حسب مفهومك.",
+    
+    field_numImages_label: "عدد الصور المراد توليدها",
+    field_productImage_label: "رفع صورة المنتج/الأساسية",
+    field_productName_label: "اسم المنتج",
+    field_customConcept_label: "مفهوم مخصص",
+    field_customRequest_label: "طلبات إضافية (اختيارية)",
+    
+    option_numImages_1: "صورة واحدة",
+    option_numImages_2: "صورتان",
+    option_numImages_3: "3 صور",
+    option_numImages_4: "4 صور",
+    option_numImages_5: "5 صور",
+  },
+  // ko: {
     app_title: '자영업자를 위한 AI 비즈니스 솔루션',
     app_header: 'AI 제품 사진 스튜디오',
     app_header_new: '자영업자 AI 비즈니스 솔루션',
@@ -488,7 +603,7 @@ export const locales: { [key in Locale]: Translations } = {
     option_staging_package: "製品 & パッケージングモックアップ",
     option_staging_abstract: "芸術的 & 抽象的構成",
     option_staging_cinematic: "映画的シーン演出",
-  },
+  // },
   en: {
     app_title: 'AI Business Solution for the Self-Employed',
     app_header: 'AI Product Photo Studio',
@@ -533,6 +648,52 @@ export const locales: { [key in Locale]: Translations } = {
     // Errors
     error_generation_failed: 'Failed to generate images.',
     error_suggestion_failed: 'Failed to generate AI suggestions.',
+    
+    history_title: 'History',
+    history_empty: 'No saved images yet',
+    clear_history: 'Clear History',
+    confirm_clear_history: 'Are you sure you want to clear all saved images?',
+    view_history: 'View History',
+    
+    auth_welcome: 'Welcome',
+    auth_description: 'Sign in to save your images and access them from any device',
+    auth_google_signin: 'Sign in with Google',
+    auth_terms: 'By continuing, you agree to our Terms of Service',
+    auth_error: 'An error occurred during sign in',
+    sign_out: 'Sign Out',
+    auth_signin: 'Sign In',
+    auth_signup: 'Sign Up',
+    auth_email: 'Email',
+    auth_password: 'Password',
+    auth_email_placeholder: 'Enter your email',
+    auth_password_placeholder: 'Enter your password',
+    auth_loading: 'Loading...',
+    auth_or: 'or',
+    auth_have_account: 'Already have an account? Sign in',
+    auth_need_account: 'Need an account? Sign up',
+    auth_signup_success: 'Account created successfully! You can now sign in.',
+    
+    payment_title: 'Payment',
+    payment_item: 'Item',
+    payment_images: 'images',
+    payment_price_per_image: 'Price per image',
+    payment_total: 'Total',
+    payment_currency: 'IQD',
+    payment_cancel: 'Cancel',
+    payment_pay: 'Pay Now',
+    payment_processing: 'Processing...',
+    payment_error: 'Payment failed',
+    payment_success: 'Payment successful!',
+    
+    subscription_title: 'Choose Your Plan',
+    subscription_per_month: 'per month',
+    subscription_unlimited: 'Unlimited',
+    subscription_subscribe: 'Subscribe',
+    subscription_note: 'All plans renew monthly. Cancel anytime.',
+    subscription_active: 'Active Subscription',
+    subscription_remaining: 'images remaining',
+    subscription_expired: 'Subscription Expired',
+    subscription_upgrade: 'Upgrade Plan',
 
     // Buttons & Common UI
     button_upload_file: 'Upload a file',
@@ -973,8 +1134,11 @@ export const locales: { [key in Locale]: Translations } = {
     option_staging_abstract: "Artistic & Abstract Composition",
     option_staging_cinematic: "Cinematic Scene Staging",
   },
-// FIX: The Japanese locale object was defined outside the main 'locales' object, causing numerous syntax errors.
-// It has been moved inside and formatted correctly.
+  /*
+  // Commented out Korean and Japanese locales
+  ko: {
+    // ... Korean translations
+  },
   ja: {
     app_title: '自営業者のためのAIビジネスソリューション',
     app_header: 'AI製品写真スタジオ',
@@ -1451,4 +1615,5 @@ export const locales: { [key in Locale]: Translations } = {
     option_staging_abstract: "芸術的 & 抽象的構成",
     option_staging_cinematic: "映画的シーン演出",
   },
+  */
 };

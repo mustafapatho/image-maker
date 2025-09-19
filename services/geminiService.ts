@@ -1,13 +1,15 @@
 import { GoogleGenAI, Modality, GenerateContentResponse, Part, Type } from "@google/genai";
 import type { Category } from '../types';
-
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
+const api = process.env.VITE_GEMINI_API_KEY
+// const API_KEY = process.env.API_KEY;
+console.log(`API ket is ${api}`)
+// here also we're using VITE_GEMINI_API_KEY instead of API_KEY just for testing
+if (!process.env.VITE_GEMINI_API_KEY) {
     throw new Error("API_KEY environment variable is not set.");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// here we're using VITE_GEMINI_API_KEY instead of API_KEY just for testing
+const ai = new GoogleGenAI({ apiKey: process.env.VITE_GEMINI_API_KEY });
 
 
 const fileToGenerativePart = async (file: File) => {

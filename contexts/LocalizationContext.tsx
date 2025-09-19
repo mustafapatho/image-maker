@@ -15,7 +15,15 @@ const getNestedValue = (obj: any, path: string): string | undefined => {
 };
 
 export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [locale, setLocale] = useState<Locale>('ko');
+  const [locale, setLocale] = useState<Locale>(() => {
+    const saved = localStorage.getItem('app_locale');
+    return (saved as Locale) || 'ar';
+  });
+
+  const handleSetLocale = useCallback((newLocale: Locale) => {
+    setLocale(newLocale);
+    localStorage.setItem('app_locale', newLocale);
+  }, []);
 
   // FIX: Updated `t` function to handle placeholder replacements.
   const t = useCallback((key: string, replacements?: Record<string, string | number>): string => {
@@ -36,7 +44,7 @@ export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, [locale]);
 
   return (
-    <LocalizationContext.Provider value={{ locale, setLocale, t }}>
+    <LocalizationContext.Provider value={{ locale, setLocale: handleSetLocale, t }}>
       {children}
     </LocalizationContext.Provider>
   );

@@ -184,24 +184,24 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
   };
 
   return (
-    <div className="w-full max-w-2xl bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+    <div className="w-full max-w-2xl bg-white p-4 sm:p-6 lg:p-8 rounded-2xl shadow-lg border border-gray-200 mx-4">
       <div className="flex items-center mb-6">
         <button onClick={onBack} className="text-gray-500 hover:text-gray-800 transition mr-4" aria-label={t('aria_label_back_to_categories')}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <div className="flex items-center space-x-3">
-          <div className="[&>svg]:w-8 [&>svg]:h-8">{category.icon}</div>
-          <h2 className="text-2xl font-bold text-gray-800">{t(category.nameKey)} {t('generator_title_suffix')}</h2>
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="[&>svg]:w-6 [&>svg]:h-6 sm:[&>svg]:w-8 sm:[&>svg]:h-8 flex-shrink-0">{category.icon}</div>
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 leading-tight">{t(category.nameKey)} {t('generator_title_suffix')}</h2>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {category.suggestionPrompt && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                 <h3 className="font-semibold text-blue-800">{t('suggestion_box_title')}</h3>
-                 <p className="text-sm text-blue-700 mb-3">{t('suggestion_box_description')}</p>
+            <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                 <h3 className="text-sm sm:text-base font-semibold text-blue-800">{t('suggestion_box_title')}</h3>
+                 <p className="text-xs sm:text-sm text-blue-700 mb-3">{t('suggestion_box_description')}</p>
                  <button
                     type="button"
                     onClick={handleAiSuggest}
@@ -240,7 +240,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
                 placeholder={field.placeholderKey ? t(field.placeholderKey) : ''}
                 required={field.required}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 placeholder-gray-500 bg-white"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 placeholder-gray-500 bg-white"
               />
             ) : field.type === 'select' ? (
               <select
@@ -249,7 +249,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
                 value={typeof formData[field.name] === 'string' ? formData[field.name] as string : ''}
                 onChange={handleChange}
                 required={field.required}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition bg-white text-gray-900"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition bg-white text-gray-900"
               >
                 {field.optionKeys?.map(optionKey => (
                   <option key={optionKey} value={optionKey}>{t(optionKey)}</option>
@@ -264,7 +264,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
                 onChange={handleChange}
                 placeholder={field.placeholderKey ? t(field.placeholderKey) : ''}
                 required={field.required}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 placeholder-gray-500 bg-white"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 placeholder-gray-500 bg-white"
               />
             )}
           </div>
@@ -272,7 +272,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
         {error && <p className="text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform duration-150 ease-in-out active:scale-[0.98] flex items-center justify-center space-x-2"
+          className="w-full bg-blue-600 text-white font-bold py-3 px-4 text-sm sm:text-base rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform duration-150 ease-in-out active:scale-[0.98] flex items-center justify-center space-x-2"
         >
           <span>{t('button_generate')}</span>
            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
