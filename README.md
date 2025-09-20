@@ -1,53 +1,56 @@
 ## To Enable The Functionality of Payments :
-Payment System Setup Requirements
-1. Stripe Account Setup
-Create a Stripe account at https://stripe.com
+Payment System Setup Requirements (Wayl API)
+1. Get Wayl API Credentials
+Contact Wayl to get your API authentication key
 
-Get your Publishable Key and Secret Key from the Stripe dashboard
+Add this key to your .env.local file:
 
-Add these keys to your .env.local file:
-
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
+WAYL_API_KEY=your_wayl_authentication_key_here
 
 Copy
-2. Firebase Setup (for user management)
-Create a Firebase project at https://console.firebase.google.com
+2. Configure Wayl API Settings
+Choose your server environment:
 
-Enable Authentication with Google sign-in
+Production: https://api.thewayl.com
 
-Enable Firestore database
+Testing: https://api.thewayl-staging.com
 
-Download the Firebase config and add to .env.local
+Add the API URL to your .env.local file:
 
-3. Webhook Configuration
-In your Stripe dashboard, set up a webhook endpoint pointing to: your-domain.com/api/webhooks/stripe
+WAYL_API_URL=https://api.thewayl.com
 
-Select these events: checkout.session.completed, invoice.payment_succeeded, customer.subscription.updated
+Copy
+3. Set Up Webhook Endpoint
+Wayl will send payment notifications to your webhook
 
-Copy the webhook signing secret to .env.local as STRIPE_WEBHOOK_SECRET
+Your webhook URL will be: your-domain.com/api/webhooks/wayl
 
-4. Product Setup in Stripe
-Create products in Stripe dashboard for:
+Create a webhook secret and add to .env.local:
 
-Individual image generation (e.g., $2 per image)
+WAYL_WEBHOOK_SECRET=your_secure_webhook_secret
 
-Monthly subscription plans (e.g., $19/month for 100 images)
+Copy
+4. Configure Pricing
+Set your pricing in the app configuration:
 
-Copy the Price IDs to your environment variables
+Price per image (e.g., 2000 IQD per image)
+
+Subscription plans (e.g., 19000 IQD/month for 100 images)
+
+Currency is set to IQD (Iraqi Dinar)
 
 5. Domain Configuration
-Set your domain URL in .env.local as NEXT_PUBLIC_APP_URL=https://yourdomain.com
+Set your domain URL in .env.local:
 
-6. Test Before Going Live
-Use Stripe test keys first
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
 
-Test the complete flow: sign up → purchase → generate images
+Copy
+6. Test the Payment Flow
+Use Wayl's testing server first
 
-Switch to live keys only after testing
+Test: user signs up → creates payment link → pays → gets credits
 
-The payment system supports both one-time purchases and monthly subscriptions, with automatic credit management and user authentication.
-
+Switch to production server after testing
 
 ## Run Locally
 
