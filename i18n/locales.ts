@@ -307,6 +307,12 @@ export const locales: { [key in Locale]: Translations } = {
     option_lighting_soft: "ناعم",
     option_lighting_warm: "دافئ",
     
+    // Time of day
+    option_time_morning: "صباح",
+    option_time_afternoon: "بعد الظهر", 
+    option_time_sunset: "غروب الشمس",
+    option_time_night: "ليل",
+    
     // Backgrounds
     option_background_keep: "احتفظ بالخلفية",
     option_background_solid_profile: "لون صلب",
@@ -333,6 +339,157 @@ export const locales: { [key in Locale]: Translations } = {
     option_enhancement_remove: "إزالة",
     option_enhancement_ambience: "أجواء",
     
+    // Task options
+    option_task_remove: "إزالة عناصر",
+    option_task_composite: "دمج صور",
+    option_task_retouch: "تنقيح",
+    option_task_color: "تعديل الألوان",
+    option_task_restore: "ترميم",
+    option_task_upscale: "تحسين الدقة",
+    
+    // Car backgrounds
+    option_background_car_studio: "استوديو",
+    option_background_car_city: "مدينة",
+    option_background_car_mountain: "جبل",
+    option_background_car_coast: "ساحل",
+    option_background_car_track: "حلبة سباق",
+    
+    // Accommodation concepts
+    option_concept_accom_bright: "مشرق ومتجدد الهواء",
+    option_concept_accom_cozy: "مريح ودافئ",
+    option_concept_accom_luxury: "فاخر",
+    option_concept_accom_view: "منظر النافذة",
+    option_concept_accom_twilight: "الشفق",
+    
+    // Bakery concepts
+    option_concept_bakery_home: "نمط منزلي",
+    option_concept_bakery_patisserie: "حلواني",
+    option_concept_bakery_clean: "نظيف وبسيط",
+    option_concept_bakery_closeup: "لقطة قريبة",
+    option_concept_bakery_rustic: "ريفي",
+    option_concept_bakery_seasonal: "موسمي",
+    
+    // Beauty concepts
+    option_concept_beauty_minimal: "بسيط",
+    option_concept_beauty_natural: "طبيعي",
+    option_concept_beauty_moisture: "رطوبة",
+    option_concept_beauty_ad: "إعلان",
+    option_concept_beauty_swatch: "عينة",
+    option_concept_beauty_dramatic: "درامي",
+    
+    // Fashion concepts
+    option_concept_fashion_studio: "استوديو",
+    option_concept_fashion_outdoor: "خارجي",
+    option_concept_fashion_magazine: "مجلة",
+    option_concept_fashion_vintage: "عتيق",
+    option_concept_fashion_street: "نمط الشارع",
+    option_concept_fashion_dark_academia: "أكاديمي مظلم",
+    
+    // Interior concepts
+    option_concept_interior_bright: "مشرق",
+    option_concept_interior_cozy: "مريح",
+    option_concept_interior_modern: "حديث",
+    option_concept_interior_staging: "تنسيق",
+    option_concept_interior_style_transfer: "نقل النمط",
+    option_concept_interior_cleanup: "تنظيف",
+    
+    // IT concepts
+    option_concept_it_mockup: "نموذج الجهاز",
+    option_concept_it_sleek: "منتج أنيق",
+    option_concept_it_lifestyle: "نمط حياة",
+    option_concept_it_abstract: "مجرد",
+    option_concept_it_blueprint: "مخطط",
+    
+    // Jewelry concepts
+    option_concept_jewelry_luxury: "فاخر",
+    option_concept_jewelry_minimal: "بسيط",
+    option_concept_jewelry_antique: "عتيق",
+    option_concept_jewelry_natural: "طبيعي",
+    option_concept_jewelry_lifestyle: "نمط حياة",
+    option_concept_jewelry_surreal: "سريالي",
+    
+    // Nail/Hair concepts
+    option_concept_nh_studio: "استوديو",
+    option_concept_nh_natural: "طبيعي",
+    option_concept_nh_closeup: "لقطة قريبة",
+    option_concept_nh_glam: "ساحر",
+    option_concept_nh_lifestyle: "نمط حياة",
+    
+    // Pet concepts
+    option_concept_pet_home: "منزل",
+    option_concept_pet_grass: "عشب",
+    option_concept_pet_studio: "استوديو",
+    option_concept_pet_fun: "ممتع",
+    option_concept_pet_portrait: "صورة شخصية",
+    
+    // Mood options
+    option_mood_film: "فيلم",
+    option_mood_clear: "واضح",
+    option_mood_cinematic: "سينمائي",
+    option_mood_vintage: "عتيق",
+    option_mood_bw: "أبيض وأسود",
+    option_mood_fitness_energetic: "نشيط",
+    option_mood_fitness_calm: "هادئ",
+    option_mood_fitness_modern: "حديث",
+    option_mood_fitness_gritty: "قاسي",
+    option_mood_influencer_clean: "نظيف",
+    option_mood_influencer_warm: "دافئ",
+    option_mood_influencer_cinematic: "سينمائي",
+    option_mood_influencer_vibrant: "نابض بالحياة",
+    option_mood_influencer_dreamy: "حالم",
+    
+    // Platform options
+    option_platform_instagram_feed: "خلاصة إنستغرام",
+    option_platform_instagram_story: "قصة إنستغرام",
+    option_platform_blog: "مدونة",
+    
+    // Plating options
+    option_plating_simple: "بسيط",
+    option_plating_vintage: "عتيق",
+    option_plating_wood: "خشبي",
+    option_plating_beverage: "مع مشروب",
+    option_plating_none: "بدون تقديم",
+    
+    // Post type options
+    option_posttype_ootd: "إطلالة اليوم",
+    option_posttype_product_review: "مراجعة منتج",
+    option_posttype_cafe_visit: "زيارة مقهى",
+    option_posttype_travel: "سفر",
+    
+    // Service options
+    option_service_nail: "فن الأظافر",
+    option_service_hair: "تسريحة شعر",
+    option_service_car_detailing: "تفصيل السيارة",
+    option_service_car_shoot: "تصوير السيارة",
+    option_service_car_interior: "داخلية السيارة",
+    
+    // Shot type options
+    option_shot_full: "الجسم كاملاً",
+    option_shot_upper: "الجزء العلوي",
+    option_shot_closeup: "لقطة قريبة",
+    
+    // Style options
+    option_style_handmade_natural: "طبيعي",
+    option_style_handmade_elegant: "أنيق",
+    option_style_handmade_cute: "لطيف",
+    option_style_handmade_modern: "حديث",
+    option_style_handmade_flatlay: "تخطيط مسطح",
+    
+    // Subject options
+    option_subject_couple: "زوجان",
+    option_subject_friends: "أصدقاء",
+    option_subject_family: "عائلة",
+    option_subject_personal: "شخصي",
+    option_subject_it_ui: "واجهة المستخدم/البرمجيات",
+    option_subject_it_device: "جهاز الأجهزة",
+    option_subject_it_person: "شخص",
+    
+    // YouTuber style options
+    option_youtuber_style_mrbeast: "نمط مستر بيست",
+    option_youtuber_style_vlog: "نمط الفلوق",
+    option_youtuber_style_tech: "مراجعة تقنية",
+    option_youtuber_style_beauty: "نمط الجمال",
+    
     // Placeholders
     field_productName_placeholder_menu: "مثال: قهوة لاتيه",
     field_productName_placeholder_bakery: "مثال: كيكة الشوكولاتة",
@@ -346,9 +503,63 @@ export const locales: { [key in Locale]: Translations } = {
     field_customConcept_placeholder_viral: "وصف مفهومك المخصص...",
     field_customConcept_placeholder_campaign: "وصف مفهومك المخصص...",
     field_customConcept_placeholder_cafe: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_bakery: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_beauty: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_fashion: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_handmade: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_interior: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_jewelry: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_pet: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_lifestyle: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_youtuber: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_influencer: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_it: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_nailhair: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_fitness: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_car: "وصف مفهومك المخصص...",
+    field_customConcept_placeholder_accom: "وصف مفهومك المخصص...",
     field_customRequest_placeholder_viral: "طلبات إضافية...",
     field_customRequest_placeholder_cafe: "طلبات إضافية...",
+    field_customRequest_placeholder_bakery: "طلبات إضافية...",
+    field_customRequest_placeholder_beauty: "طلبات إضافية...",
+    field_customRequest_placeholder_fashion: "طلبات إضافية...",
+    field_customRequest_placeholder_handmade: "طلبات إضافية...",
+    field_customRequest_placeholder_interior: "طلبات إضافية...",
+    field_customRequest_placeholder_jewelry: "طلبات إضافية...",
+    field_customRequest_placeholder_pet: "طلبات إضافية...",
+    field_customRequest_placeholder_profile: "طلبات إضافية...",
+    field_customRequest_placeholder_lifestyle: "طلبات إضافية...",
+    field_customRequest_placeholder_youtuber: "طلبات إضافية...",
+    field_customRequest_placeholder_influencer: "طلبات إضافية...",
+    field_customRequest_placeholder_it: "طلبات إضافية...",
+    field_customRequest_placeholder_event: "طلبات إضافية...",
+    field_customRequest_placeholder_nailhair: "طلبات إضافية...",
+    field_customRequest_placeholder_fitness: "طلبات إضافية...",
+    field_customRequest_placeholder_car: "طلبات إضافية...",
+    field_customRequest_placeholder_accom: "طلبات إضافية...",
     field_garnish_placeholder: "مثال: أوراق النعناع",
+    field_carModel_placeholder: "مثال: BMW X5",
+    field_clothingChange_text_placeholder: "مثال: بدلة زرقاء مع قميص أبيض",
+    field_compositionDetails_placeholder: "وصف التركيب...",
+    field_customBackground_placeholder: "وصف خلفيتك المخصصة...",
+    field_customLighting_placeholder: "وصف إضاءتك المخصصة...",
+    field_customPlating_placeholder: "وصف تقديمك المخصص...",
+    field_displayInstructions_placeholder: "وصف تعليمات العرض...",
+    field_eventType_placeholder: "مثال: مؤتمر شركات",
+    field_gridDescription_placeholder: "وصف تخطيط الشبكة...",
+    field_hairstyle_placeholder: "مثال: قصة بوب قصيرة",
+    field_locationDescription_placeholder: "وصف الموقع...",
+    field_merchandiseList_placeholder: "قائمة البضائع...",
+    field_modelDetails_placeholder: "وصف الموديل...",
+    field_modelDetails_placeholder_jewelry: "وصف الموديل للمجوهرات...",
+    field_modelRequest_placeholder: "وصف طلب الموديل...",
+    field_overallTone_placeholder: "مثال: مهني، دافئ، حديث",
+    field_resolutionStyle_placeholder: "مثال: 4K، دقة عالية",
+    field_sceneDescription_placeholder: "وصف المشهد...",
+    field_spaceType_placeholder: "مثال: غرفة معيشة",
+    field_spaceType_placeholder_accom: "مثال: غرفة فندق",
+    field_taskDescription_placeholder: "وصف المهمة...",
+    field_youtuber_title_placeholder: "مثال: اكتشاف مذهل!",
     
     // Info texts
     field_viral_sourceImage_info: "ارفع صورة الشخص أو الشيء الذي تريد تحويله",
@@ -656,6 +867,12 @@ export const locales: { [key in Locale]: Translations } = {
     option_lighting_soft: "Soft",
     option_lighting_warm: "Warm",
     
+    // Time of day
+    option_time_morning: "Morning",
+    option_time_afternoon: "Afternoon", 
+    option_time_sunset: "Sunset",
+    option_time_night: "Night",
+    
     // Backgrounds
     option_background_keep: "Keep Background",
     option_background_solid_profile: "Solid Color",
@@ -682,6 +899,157 @@ export const locales: { [key in Locale]: Translations } = {
     option_enhancement_remove: "Remove",
     option_enhancement_ambience: "Ambience",
     
+    // Task options
+    option_task_remove: "Remove Elements",
+    option_task_composite: "Composite Images",
+    option_task_retouch: "Retouch",
+    option_task_color: "Color Adjustment",
+    option_task_restore: "Restore",
+    option_task_upscale: "Upscale Quality",
+    
+    // Car backgrounds
+    option_background_car_studio: "Studio",
+    option_background_car_city: "City",
+    option_background_car_mountain: "Mountain",
+    option_background_car_coast: "Coast",
+    option_background_car_track: "Race Track",
+    
+    // Accommodation concepts
+    option_concept_accom_bright: "Bright & Airy",
+    option_concept_accom_cozy: "Cozy & Warm",
+    option_concept_accom_luxury: "Luxury",
+    option_concept_accom_view: "Window View",
+    option_concept_accom_twilight: "Twilight",
+    
+    // Bakery concepts
+    option_concept_bakery_home: "Home Style",
+    option_concept_bakery_patisserie: "Patisserie",
+    option_concept_bakery_clean: "Clean & Minimal",
+    option_concept_bakery_closeup: "Close-up",
+    option_concept_bakery_rustic: "Rustic",
+    option_concept_bakery_seasonal: "Seasonal",
+    
+    // Beauty concepts
+    option_concept_beauty_minimal: "Minimal",
+    option_concept_beauty_natural: "Natural",
+    option_concept_beauty_moisture: "Moisture",
+    option_concept_beauty_ad: "Advertisement",
+    option_concept_beauty_swatch: "Swatch",
+    option_concept_beauty_dramatic: "Dramatic",
+    
+    // Fashion concepts
+    option_concept_fashion_studio: "Studio",
+    option_concept_fashion_outdoor: "Outdoor",
+    option_concept_fashion_magazine: "Magazine",
+    option_concept_fashion_vintage: "Vintage",
+    option_concept_fashion_street: "Street Style",
+    option_concept_fashion_dark_academia: "Dark Academia",
+    
+    // Interior concepts
+    option_concept_interior_bright: "Bright",
+    option_concept_interior_cozy: "Cozy",
+    option_concept_interior_modern: "Modern",
+    option_concept_interior_staging: "Staging",
+    option_concept_interior_style_transfer: "Style Transfer",
+    option_concept_interior_cleanup: "Cleanup",
+    
+    // IT concepts
+    option_concept_it_mockup: "Device Mockup",
+    option_concept_it_sleek: "Sleek Product",
+    option_concept_it_lifestyle: "Lifestyle",
+    option_concept_it_abstract: "Abstract",
+    option_concept_it_blueprint: "Blueprint",
+    
+    // Jewelry concepts
+    option_concept_jewelry_luxury: "Luxury",
+    option_concept_jewelry_minimal: "Minimal",
+    option_concept_jewelry_antique: "Antique",
+    option_concept_jewelry_natural: "Natural",
+    option_concept_jewelry_lifestyle: "Lifestyle",
+    option_concept_jewelry_surreal: "Surreal",
+    
+    // Nail/Hair concepts
+    option_concept_nh_studio: "Studio",
+    option_concept_nh_natural: "Natural",
+    option_concept_nh_closeup: "Close-up",
+    option_concept_nh_glam: "Glamorous",
+    option_concept_nh_lifestyle: "Lifestyle",
+    
+    // Pet concepts
+    option_concept_pet_home: "Home",
+    option_concept_pet_grass: "Grass",
+    option_concept_pet_studio: "Studio",
+    option_concept_pet_fun: "Fun",
+    option_concept_pet_portrait: "Portrait",
+    
+    // Mood options
+    option_mood_film: "Film",
+    option_mood_clear: "Clear",
+    option_mood_cinematic: "Cinematic",
+    option_mood_vintage: "Vintage",
+    option_mood_bw: "Black & White",
+    option_mood_fitness_energetic: "Energetic",
+    option_mood_fitness_calm: "Calm",
+    option_mood_fitness_modern: "Modern",
+    option_mood_fitness_gritty: "Gritty",
+    option_mood_influencer_clean: "Clean",
+    option_mood_influencer_warm: "Warm",
+    option_mood_influencer_cinematic: "Cinematic",
+    option_mood_influencer_vibrant: "Vibrant",
+    option_mood_influencer_dreamy: "Dreamy",
+    
+    // Platform options
+    option_platform_instagram_feed: "Instagram Feed",
+    option_platform_instagram_story: "Instagram Story",
+    option_platform_blog: "Blog",
+    
+    // Plating options
+    option_plating_simple: "Simple",
+    option_plating_vintage: "Vintage",
+    option_plating_wood: "Wooden",
+    option_plating_beverage: "With Beverage",
+    option_plating_none: "No Plating",
+    
+    // Post type options
+    option_posttype_ootd: "OOTD",
+    option_posttype_product_review: "Product Review",
+    option_posttype_cafe_visit: "Cafe Visit",
+    option_posttype_travel: "Travel",
+    
+    // Service options
+    option_service_nail: "Nail Art",
+    option_service_hair: "Hair Style",
+    option_service_car_detailing: "Car Detailing",
+    option_service_car_shoot: "Car Photoshoot",
+    option_service_car_interior: "Car Interior",
+    
+    // Shot type options
+    option_shot_full: "Full Body",
+    option_shot_upper: "Upper Body",
+    option_shot_closeup: "Close-up",
+    
+    // Style options
+    option_style_handmade_natural: "Natural",
+    option_style_handmade_elegant: "Elegant",
+    option_style_handmade_cute: "Cute",
+    option_style_handmade_modern: "Modern",
+    option_style_handmade_flatlay: "Flat Lay",
+    
+    // Subject options
+    option_subject_couple: "Couple",
+    option_subject_friends: "Friends",
+    option_subject_family: "Family",
+    option_subject_personal: "Personal",
+    option_subject_it_ui: "UI/Software",
+    option_subject_it_device: "Hardware Device",
+    option_subject_it_person: "Person",
+    
+    // YouTuber style options
+    option_youtuber_style_mrbeast: "MrBeast Style",
+    option_youtuber_style_vlog: "Vlog Style",
+    option_youtuber_style_tech: "Tech Review",
+    option_youtuber_style_beauty: "Beauty Style",
+    
     // Placeholders
     field_productName_placeholder_menu: "e.g., Latte Coffee",
     field_productName_placeholder_bakery: "e.g., Chocolate Cake",
@@ -695,9 +1063,63 @@ export const locales: { [key in Locale]: Translations } = {
     field_customConcept_placeholder_viral: "Describe your custom concept...",
     field_customConcept_placeholder_campaign: "Describe your custom concept...",
     field_customConcept_placeholder_cafe: "Describe your custom concept...",
+    field_customConcept_placeholder_bakery: "Describe your custom concept...",
+    field_customConcept_placeholder_beauty: "Describe your custom concept...",
+    field_customConcept_placeholder_fashion: "Describe your custom concept...",
+    field_customConcept_placeholder_handmade: "Describe your custom concept...",
+    field_customConcept_placeholder_interior: "Describe your custom concept...",
+    field_customConcept_placeholder_jewelry: "Describe your custom concept...",
+    field_customConcept_placeholder_pet: "Describe your custom concept...",
+    field_customConcept_placeholder_lifestyle: "Describe your custom concept...",
+    field_customConcept_placeholder_youtuber: "Describe your custom concept...",
+    field_customConcept_placeholder_influencer: "Describe your custom concept...",
+    field_customConcept_placeholder_it: "Describe your custom concept...",
+    field_customConcept_placeholder_nailhair: "Describe your custom concept...",
+    field_customConcept_placeholder_fitness: "Describe your custom concept...",
+    field_customConcept_placeholder_car: "Describe your custom concept...",
+    field_customConcept_placeholder_accom: "Describe your custom concept...",
     field_customRequest_placeholder_viral: "Additional requests...",
     field_customRequest_placeholder_cafe: "Additional requests...",
+    field_customRequest_placeholder_bakery: "Additional requests...",
+    field_customRequest_placeholder_beauty: "Additional requests...",
+    field_customRequest_placeholder_fashion: "Additional requests...",
+    field_customRequest_placeholder_handmade: "Additional requests...",
+    field_customRequest_placeholder_interior: "Additional requests...",
+    field_customRequest_placeholder_jewelry: "Additional requests...",
+    field_customRequest_placeholder_pet: "Additional requests...",
+    field_customRequest_placeholder_profile: "Additional requests...",
+    field_customRequest_placeholder_lifestyle: "Additional requests...",
+    field_customRequest_placeholder_youtuber: "Additional requests...",
+    field_customRequest_placeholder_influencer: "Additional requests...",
+    field_customRequest_placeholder_it: "Additional requests...",
+    field_customRequest_placeholder_event: "Additional requests...",
+    field_customRequest_placeholder_nailhair: "Additional requests...",
+    field_customRequest_placeholder_fitness: "Additional requests...",
+    field_customRequest_placeholder_car: "Additional requests...",
+    field_customRequest_placeholder_accom: "Additional requests...",
     field_garnish_placeholder: "e.g., mint leaves",
+    field_carModel_placeholder: "e.g., BMW X5",
+    field_clothingChange_text_placeholder: "e.g., Navy suit with white shirt",
+    field_compositionDetails_placeholder: "Describe the composition...",
+    field_customBackground_placeholder: "Describe your custom background...",
+    field_customLighting_placeholder: "Describe your custom lighting...",
+    field_customPlating_placeholder: "Describe your custom plating...",
+    field_displayInstructions_placeholder: "Describe display instructions...",
+    field_eventType_placeholder: "e.g., Corporate Conference",
+    field_gridDescription_placeholder: "Describe the grid layout...",
+    field_hairstyle_placeholder: "e.g., Short bob cut",
+    field_locationDescription_placeholder: "Describe the location...",
+    field_merchandiseList_placeholder: "List the merchandise...",
+    field_modelDetails_placeholder: "Describe the model...",
+    field_modelDetails_placeholder_jewelry: "Describe the model for jewelry...",
+    field_modelRequest_placeholder: "Describe the model request...",
+    field_overallTone_placeholder: "e.g., Professional, warm, modern",
+    field_resolutionStyle_placeholder: "e.g., 4K, high resolution",
+    field_sceneDescription_placeholder: "Describe the scene...",
+    field_spaceType_placeholder: "e.g., Living room",
+    field_spaceType_placeholder_accom: "e.g., Hotel room",
+    field_taskDescription_placeholder: "Describe the task...",
+    field_youtuber_title_placeholder: "e.g., Amazing Discovery!",
     
     // Info texts
     field_viral_sourceImage_info: "Upload a photo of the person or object you want to transform",

@@ -8,7 +8,7 @@ import LoadingIndicator from './components/LoadingIndicator';
 import History from './components/History';
 import PaymentModal from './components/PaymentModal';
 import SubscriptionModal from './components/SubscriptionModal';
-import { isSubscriptionActive, getRemainingImages, useImage } from './services/subscriptionService';
+import { subscriptionService } from './services/subscriptionService';
 import { generateProductImages } from './services/geminiService';
 import { saveToHistory } from './utils/historyManager';
 import { signOut } from './services/supabase';
@@ -57,59 +57,70 @@ const AppContent: React.FC = () => {
   };
 
   const handleGenerate = async (formData: Record<string, string | File>) => {
-    if (!selectedCategory) return;
+    if (!selectedCategory || !user) return;
     
-    const numImagesStr = (formData.numImages as string) || 'option_numImages_3';
-    const numImages = parseInt(numImagesStr.split('_').pop() || '3', 10);
+    const numImagesStr = (formData.numImages as string) || 'option_numImages_1';
+    const numImages = parseInt(numImagesStr.split('_').pop() || '1', 10);
     
-    // Check subscription status
-    if (isSubscriptionActive()) {
-      const remaining = getRemainingImages();
-      if (remaining >= numImages) {
-        // Use subscription images
-        for (let i = 0; i < numImages; i++) {
-          useImage();
-        }
-        setPendingFormData(formData);
-        handlePaymentSuccess();
-        return;
-      } else {
-        alert(`${t('subscription_remaining')}: ${remaining}`);
-        return;
-      }
+    // Check if user has enough images
+    if (!subscriptionService.hasAvailableImages(user.id)) {
+      setPendingFormData(formData);
+      setShowPaymentModal(true);
+      return;
     }
     
-    // Show subscription modal first
-    setShowSubscriptionModal(true);
-  };
-  
-  const handlePaymentSuccess = async () => {
-    if (!selectedCategory || !pendingFormData) return;
+    // Check if user has enough images for the requested amount
+    const availableImages = subscriptionService.getRemainingImages(user.id);
+    if (availableImages < numImages) {
+      setPendingFormData(formData);
+      setShowPaymentModal(true);
+      return;
+    }
     
+    // Proceed with generation
     setCurrentStep('loading');
     setGeneratedImages([]);
     setError(null);
-    setLastGenerationData(pendingFormData);
-    
-    const numImagesStr = (pendingFormData.numImages as string) || 'option_numImages_3';
-    const numImages = parseInt(numImagesStr.split('_').pop() || '3', 10);
-    
+    setLastGenerationData(formData);
     setGenerationProgress({ current: 0, total: numImages });
 
     try {
-      const images = await generateProductImages(selectedCategory, pendingFormData, numImages, handleProgress);
+      // Use images from subscription/credits
+      for (let i = 0; i < numImages; i++) {
+        subscriptionService.useImage(user.id);
+      }
+      
+      const images = await generateProductImages(selectedCategory, formData, numImages, handleProgress);
       setGeneratedImages(images);
-      saveToHistory(t(selectedCategory.nameKey), images, pendingFormData);
+      saveToHistory(t(selectedCategory.nameKey), images, formData);
       setCurrentStep('result');
-      alert(t('payment_success'));
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(`${t('error_generation_failed')} ${errorMessage}`);
       setCurrentStep('generator');
-    } finally {
-      setPendingFormData(null);
     }
+  };
+  
+  const handlePaymentSuccess = async (referenceId: string) => {
+    if (!user || !pendingFormData) return;
+    
+    // Parse reference ID to determine payment type
+    if (referenceId.startsWith('sub_')) {
+      const parts = referenceId.split('_');
+      const planId = parts[2];
+      subscriptionService.activateSubscription(user.id, planId, referenceId);
+    } else if (referenceId.startsWith('pay_')) {
+      const parts = referenceId.split('_');
+      const numImages = parseInt(parts[2]);
+      subscriptionService.addImages(user.id, numImages);
+    }
+    
+    setShowPaymentModal(false);
+    
+    // Proceed with generation
+    await handleGenerate(pendingFormData);
+    setPendingFormData(null);
   };
 
   const handleBackToCategories = () => {
@@ -137,9 +148,14 @@ const AppContent: React.FC = () => {
     setPendingFormData(null);
   };
   
-  const handleSubscriptionSuccess = () => {
+  const handleSubscriptionSuccess = async (referenceId: string) => {
+    if (!user) return;
+    
+    const parts = referenceId.split('_');
+    const planId = parts[2];
+    subscriptionService.activateSubscription(user.id, planId, referenceId);
+    
     setShowSubscriptionModal(false);
-    alert(t('payment_success'));
   };
   
   const handleViewHistory = () => {
@@ -198,7 +214,7 @@ const AppContent: React.FC = () => {
                   onClick={() => setShowSubscriptionModal(true)}
                   className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition"
                 >
-                  {isSubscriptionActive() ? `${getRemainingImages()} ${t('subscription_remaining')}` : t('subscription_subscribe')}
+                  {subscriptionService.isSubscriptionActive(user.id) ? `${subscriptionService.getRemainingImages(user.id)} ${t('subscription_remaining')}` : t('subscription_subscribe')}
                 </button>
                 <button 
                   onClick={async () => {
@@ -229,12 +245,14 @@ const AppContent: React.FC = () => {
         onClose={handleClosePaymentModal}
         onPaymentSuccess={handlePaymentSuccess}
         numImages={pendingFormData ? parseInt((pendingFormData.numImages as string || 'option_numImages_3').split('_').pop() || '3', 10) : 3}
+        userId={user.id}
       />
       
       <SubscriptionModal
         isOpen={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
         onSubscribe={handleSubscriptionSuccess}
+        userId={user.id}
       />
     </div>
   );

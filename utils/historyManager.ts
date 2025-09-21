@@ -11,25 +11,48 @@ export const saveToHistory = (
   images: string[],
   formData: Record<string, any>
 ): void => {
-  const historyItem: HistoryItem = {
-    id: Date.now().toString(),
-    categoryName,
-    images,
-    createdAt: new Date().toISOString(),
-    formData
-  };
+  try {
+    const historyItem: HistoryItem = {
+      id: Date.now().toString(),
+      categoryName,
+      images,
+      createdAt: new Date().toISOString(),
+      formData
+    };
 
-  const existingHistory = localStorage.getItem('imageHistory');
-  const history: HistoryItem[] = existingHistory ? JSON.parse(existingHistory) : [];
-  
-  history.unshift(historyItem); // Add to beginning
-  
-  // Keep only last 50 items
-  if (history.length > 50) {
-    history.splice(50);
+    const existingHistory = localStorage.getItem('imageHistory');
+    const history: HistoryItem[] = existingHistory ? JSON.parse(existingHistory) : [];
+    
+    history.unshift(historyItem);
+    
+    // Keep only last 10 items to save space
+    if (history.length > 10) {
+      history.splice(10);
+    }
+    
+    localStorage.setItem('imageHistory', JSON.stringify(history));
+  } catch (error) {
+    // If storage is full, clear old data and try again
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('Storage quota exceeded, clearing old history');
+      clearHistory();
+      // Try saving just this item
+      const historyItem: HistoryItem = {
+        id: Date.now().toString(),
+        categoryName,
+        images,
+        createdAt: new Date().toISOString(),
+        formData
+      };
+      try {
+        localStorage.setItem('imageHistory', JSON.stringify([historyItem]));
+      } catch {
+        console.error('Unable to save to history - storage quota exceeded');
+      }
+    } else {
+      console.error('Error saving to history:', error);
+    }
   }
-  
-  localStorage.setItem('imageHistory', JSON.stringify(history));
 };
 
 export const getHistory = (): HistoryItem[] => {

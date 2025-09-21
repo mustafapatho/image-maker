@@ -1,26 +1,43 @@
-import { GoogleGenAI, Modality, GenerateContentResponse, Part, Type } from "@google/genai";
+import { createClient } from "@supabase/supabase-js";
 import type { Category } from '../types';
-const api = process.env.VITE_GEMINI_API_KEY
-// const API_KEY = process.env.API_KEY;
-console.log(`API ket is ${api}`)
-// here also we're using VITE_GEMINI_API_KEY instead of API_KEY just for testing
-if (!process.env.VITE_GEMINI_API_KEY) {
-    throw new Error("API_KEY environment variable is not set.");
+import { locales } from '../i18n/locales';
+
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase environment variables');
 }
 
-// here we're using VITE_GEMINI_API_KEY instead of API_KEY just for testing
-const ai = new GoogleGenAI({ apiKey: process.env.VITE_GEMINI_API_KEY });
+const supabase = createClient(supabaseUrl, supabaseKey);
 
+async function callGemini(prompt: string, imageData?: any, model?: string) {
+  const { data, error } = await supabase.functions.invoke("gemini-fn", {
+    body: { prompt, imageData, model },
+  });
+  
+  if (error) {
+    console.error("Edge Function Error:", error);
+    throw new Error(error.message || 'Gemini API error');
+  }
 
-const fileToGenerativePart = async (file: File) => {
-  const base64EncodedDataPromise = new Promise<string>((resolve) => {
+  if (!data) {
+    throw new Error('No data returned from Edge Function');
+  }
+
+  return data;
+}
+
+const fileToBase64 = async (file: File): Promise<{data: string, mimeType: string}> => {
+  return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      const data = result.split(',')[1];
+      resolve({ data, mimeType: file.type });
+    };
     reader.readAsDataURL(file);
   });
-  return {
-    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
-  };
 };
 
 export const analyzeImageForSuggestions = async (
@@ -31,17 +48,14 @@ export const analyzeImageForSuggestions = async (
     if (!category.suggestionPrompt) {
         throw new Error("This category does not support AI suggestions.");
     }
-    const imagePart = await fileToGenerativePart(imageFile);
+    
+    const imageData = await fileToBase64(imageFile);
     const prompt = category.suggestionPrompt(fields);
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: { parts: [imagePart, { text: prompt }] },
-        });
-
-        let text = response.text.trim();
-        // Clean the response to ensure it's valid JSON
+        const response = await callGemini(prompt, imageData, 'gemini-2.0-flash');
+        
+        let text = response.candidates[0].content.parts[0].text.trim();
         if (text.startsWith("```json")) {
             text = text.substring(7, text.length - 3).trim();
         } else if (text.startsWith("```")) {
@@ -53,10 +67,26 @@ export const analyzeImageForSuggestions = async (
 
     } catch (error) {
         console.error("Error analyzing image for suggestions:", error);
-        throw new Error("AI 제안을 생성하는 데 실패했습니다. 이미지나 카테고리를 확인해주세요.");
+        throw new Error("Error Analyzing Image.");
     }
 }
 
+// Helper function to resolve option keys to their English translations
+const resolveOptionKeys = (formData: Record<string, string | File>): Record<string, string> => {
+  const resolved: Record<string, string> = {};
+  
+  for (const [key, value] of Object.entries(formData)) {
+    if (typeof value === 'string' && value.startsWith('option_')) {
+      // Use English translations for the prompt
+      const translatedValue = locales.en[value] as string;
+      resolved[key] = translatedValue || value;
+    } else if (typeof value === 'string') {
+      resolved[key] = value;
+    }
+  }
+  
+  return resolved;
+};
 
 export const generateProductImages = async (
   category: Category,
@@ -70,73 +100,24 @@ export const generateProductImages = async (
     throw new Error("Image file is missing.");
   }
   
-  const backgroundRefFile = formData.backgroundReferenceImage as File;
-  const modelFile = formData.modelImage as File;
-  const clothingFile = formData.clothingImage as File;
-  const consistencyFile = formData.consistencyReferenceImage as File;
-  const personFile = formData.personImage as File;
-
-  const imagePart = await fileToGenerativePart(imageFile);
-  
-  // Pass all form data to the template, including files for conditional logic
-  const prompt = category.promptTemplate(formData as Record<string, string>);
+  // Resolve option keys to their English translations before generating prompt
+  const resolvedData = resolveOptionKeys(formData);
+  const prompt = category.promptTemplate(resolvedData);
   console.log("Generated Prompt:", prompt);
   
-  const parts: Part[] = [imagePart];
+  const mainImageData = await fileToBase64(imageFile);
   
-  if (backgroundRefFile) {
-      const backgroundPart = await fileToGenerativePart(backgroundRefFile);
-      parts.push(backgroundPart);
-  }
-  
-  if (modelFile) {
-      const modelPart = await fileToGenerativePart(modelFile);
-      parts.push(modelPart);
-  }
-
-  if (clothingFile) {
-      const clothingPart = await fileToGenerativePart(clothingFile);
-      parts.push(clothingPart);
-  }
-  
-  if (consistencyFile) {
-      const consistencyPart = await fileToGenerativePart(consistencyFile);
-      parts.push(consistencyPart);
-  }
-
-  if (personFile) {
-      const personPart = await fileToGenerativePart(personFile);
-      parts.push(personPart);
-  }
-
-  parts.push({ text: prompt });
-
-  const contents = { parts };
-
   const generateSingleImage = async (): Promise<string> => {
-    const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image-preview',
-      contents: contents,
-      config: {
-        responseModalities: [Modality.IMAGE, Modality.TEXT],
-      },
-    });
-
-    for (const part of response.candidates[0].content.parts) {
+    const response = await callGemini(prompt, mainImageData, 'gemini-2.5-flash-image-preview');
+    
+    const candidate = response.candidates[0];
+    for (const part of candidate.content.parts) {
       if (part.inlineData) {
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
       }
     }
-    // Check for safety ratings and provide a more informative error
-    const candidate = response.candidates[0];
-    if (candidate.finishReason !== 'STOP' && candidate.safetyRatings) {
-      const blockedRating = candidate.safetyRatings.find(rating => rating.blocked);
-      if (blockedRating) {
-        console.warn('Image generation blocked due to safety settings. Category:', blockedRating.category);
-        throw new Error(`이미지 생성이 안전 설정에 의해 차단되었습니다. (사유: ${blockedRating.category}) 다른 이미지나 프롬프트를 시도해주세요.`);
-      }
-    }
-    throw new Error("API가 이미지를 반환하지 않았습니다. 모델이 요청을 거부했을 수 있습니다.");
+    
+    throw new Error("No image returned from API");
   };
 
   try {
@@ -153,6 +134,7 @@ export const generateProductImages = async (
             .catch(error => {
                 completedCount++;
                 onProgress(completedCount, numImages);
+                console.error('Image generation failed:', error.message);
                 return { status: 'rejected' as const, reason: error };
             })
     );
@@ -164,21 +146,18 @@ export const generateProductImages = async (
         .map(result => (result as { status: 'fulfilled'; value: string }).value);
     
     if (successfulImages.length === 0) {
-      results.forEach(result => {
-        if (result.status === 'rejected') {
-            console.error("A generation promise failed:", result.reason);
-        }
-      });
-      throw new Error("API가 이미지를 하나도 반환하지 않았습니다. 모든 요청이 실패했을 수 있습니다.");
+      const failedResults = results.filter(result => result.status === 'rejected');
+      const firstError = failedResults[0] as { status: 'rejected'; reason: Error };
+      throw new Error(firstError?.reason?.message || "All image generation attempts failed");
     }
     
     return successfulImages;
 
   } catch (error) {
-    console.error("Error generating images with Gemini API:", error);
+    console.error("Error generating images:", error);
     if (error instanceof Error) {
         throw error;
     }
-    throw new Error("알 수 없는 오류로 이미지 생성에 실패했습니다. 콘솔을 확인해주세요.");
+    throw new Error("Internal Server Error");
   }
 };

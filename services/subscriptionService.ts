@@ -1,101 +1,212 @@
-import { createPaymentLink } from './waylPayment';
+import { waylPaymentService } from './waylPaymentService';
+
+interface Subscription {
+  id: string;
+  userId: string;
+  planId: string;
+  status: 'active' | 'expired' | 'cancelled';
+  startDate: string;
+  endDate: string;
+  imagesRemaining: number;
+  totalImages: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface SubscriptionPlan {
   id: string;
   name: string;
   price: number;
-  imagesPerMonth: number;
   currency: string;
+  images: number;
+  duration: number; // days
 }
 
+// Subscription plans
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'basic',
     name: 'Basic Plan',
-    price: 25000, // 25,000 IQD
-    imagesPerMonth: 50,
-    currency: 'IQD'
+    price: 19000,
+    currency: 'IQD',
+    images: 100,
+    duration: 30,
   },
   {
     id: 'pro',
     name: 'Pro Plan', 
-    price: 45000, // 45,000 IQD
-    imagesPerMonth: 100,
-    currency: 'IQD'
+    price: 39000,
+    currency: 'IQD',
+    images: 250,
+    duration: 30,
   },
   {
-    id: 'unlimited',
-    name: 'Unlimited Plan',
-    price: 75000, // 75,000 IQD
-    imagesPerMonth: 999,
-    currency: 'IQD'
-  }
+    id: 'premium',
+    name: 'Premium Plan',
+    price: 69000,
+    currency: 'IQD',
+    images: 500,
+    duration: 30,
+  },
 ];
 
-interface UserSubscription {
-  planId: string;
-  startDate: string;
-  endDate: string;
-  imagesUsed: number;
-  status: 'active' | 'expired' | 'cancelled';
+// Per-image pricing
+export const PER_IMAGE_PRICE = 2000; // IQD
+
+class SubscriptionService {
+  private getStorageKey(userId: string): string {
+    return `subscription_${userId}`;
+  }
+
+  private getUsageKey(userId: string): string {
+    return `usage_${userId}`;
+  }
+
+  getCurrentSubscription(userId: string): Subscription | null {
+    try {
+      const stored = localStorage.getItem(this.getStorageKey(userId));
+      if (!stored) return null;
+      
+      const subscription: Subscription = JSON.parse(stored);
+      
+      // Check if subscription is expired
+      if (new Date(subscription.endDate) < new Date()) {
+        subscription.status = 'expired';
+        this.saveSubscription(subscription);
+      }
+      
+      return subscription;
+    } catch {
+      return null;
+    }
+  }
+
+  private saveSubscription(subscription: Subscription): void {
+    localStorage.setItem(this.getStorageKey(subscription.userId), JSON.stringify(subscription));
+  }
+
+  async createSubscription(userId: string, planId: string): Promise<{ paymentUrl: string; referenceId: string }> {
+    const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
+    if (!plan) {
+      throw new Error('Invalid subscription plan');
+    }
+
+    const referenceId = `sub_${userId}_${planId}_${Date.now()}`;
+    
+    const paymentLink = await waylPaymentService.createPaymentLink({
+      referenceId,
+      amount: plan.price,
+      description: `${plan.name} - ${plan.images} images for ${plan.duration} days`,
+    });
+
+    return {
+      paymentUrl: paymentLink.url,
+      referenceId,
+    };
+  }
+
+  async createOneTimePayment(userId: string, numImages: number): Promise<{ paymentUrl: string; referenceId: string }> {
+    const amount = numImages * PER_IMAGE_PRICE;
+    const referenceId = `pay_${userId}_${numImages}_${Date.now()}`;
+    
+    const paymentLink = await waylPaymentService.createPaymentLink({
+      referenceId,
+      amount,
+      description: `${numImages} AI Generated Images`,
+      numImages,
+    });
+
+    return {
+      paymentUrl: paymentLink.url,
+      referenceId,
+    };
+  }
+
+  activateSubscription(userId: string, planId: string, referenceId: string): Subscription {
+    const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
+    if (!plan) {
+      throw new Error('Invalid subscription plan');
+    }
+
+    const now = new Date();
+    const endDate = new Date(now.getTime() + plan.duration * 24 * 60 * 60 * 1000);
+
+    const subscription: Subscription = {
+      id: referenceId,
+      userId,
+      planId,
+      status: 'active',
+      startDate: now.toISOString(),
+      endDate: endDate.toISOString(),
+      imagesRemaining: plan.images,
+      totalImages: plan.images,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+
+    this.saveSubscription(subscription);
+    return subscription;
+  }
+
+  addImages(userId: string, numImages: number): void {
+    // For one-time payments, we'll track usage separately
+    const usageKey = this.getUsageKey(userId);
+    const currentUsage = parseInt(localStorage.getItem(usageKey) || '0');
+    localStorage.setItem(usageKey, (currentUsage + numImages).toString());
+  }
+
+  useImage(userId: string): boolean {
+    const subscription = this.getCurrentSubscription(userId);
+    
+    if (subscription && subscription.status === 'active' && subscription.imagesRemaining > 0) {
+      // Use subscription image
+      subscription.imagesRemaining--;
+      subscription.updatedAt = new Date().toISOString();
+      this.saveSubscription(subscription);
+      return true;
+    }
+    
+    // Check one-time payment images
+    const usageKey = this.getUsageKey(userId);
+    const availableImages = parseInt(localStorage.getItem(usageKey) || '0');
+    
+    if (availableImages > 0) {
+      localStorage.setItem(usageKey, (availableImages - 1).toString());
+      return true;
+    }
+    
+    return false;
+  }
+
+  getRemainingImages(userId: string): number {
+    const subscription = this.getCurrentSubscription(userId);
+    let remaining = 0;
+    
+    if (subscription && subscription.status === 'active') {
+      remaining += subscription.imagesRemaining;
+    }
+    
+    // Add one-time payment images
+    const usageKey = this.getUsageKey(userId);
+    const oneTimeImages = parseInt(localStorage.getItem(usageKey) || '0');
+    remaining += oneTimeImages;
+    
+    return remaining;
+  }
+
+  isSubscriptionActive(userId: string): boolean {
+    const subscription = this.getCurrentSubscription(userId);
+    return subscription?.status === 'active' || false;
+  }
+
+  hasAvailableImages(userId: string): boolean {
+    return this.getRemainingImages(userId) > 0;
+  }
 }
 
-export const createSubscriptionPayment = async (planId: string, userId: string) => {
-  const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
-  if (!plan) throw new Error('Plan not found');
+export const subscriptionService = new SubscriptionService();
 
-  const referenceId = `sub-${planId}-${userId}-${Date.now()}`;
-  
-  return await createPaymentLink({
-    referenceId,
-    total: plan.price,
-    currency: plan.currency,
-    lineItem: [{
-      label: `${plan.name} - Monthly Subscription`,
-      amount: plan.price,
-      type: 'increase'
-    }],
-    redirectionUrl: window.location.origin
-  });
-};
-
-export const getUserSubscription = (): UserSubscription | null => {
-  const sub = localStorage.getItem('user_subscription');
-  return sub ? JSON.parse(sub) : null;
-};
-
-export const setUserSubscription = (subscription: UserSubscription) => {
-  localStorage.setItem('user_subscription', JSON.stringify(subscription));
-};
-
-export const isSubscriptionActive = (): boolean => {
-  const sub = getUserSubscription();
-  if (!sub) return false;
-  
-  const now = new Date();
-  const endDate = new Date(sub.endDate);
-  
-  return sub.status === 'active' && now <= endDate;
-};
-
-export const getRemainingImages = (): number => {
-  const sub = getUserSubscription();
-  if (!sub || !isSubscriptionActive()) return 0;
-  
-  const plan = SUBSCRIPTION_PLANS.find(p => p.id === sub.planId);
-  if (!plan) return 0;
-  
-  return Math.max(0, plan.imagesPerMonth - sub.imagesUsed);
-};
-
-export const useImage = (): boolean => {
-  const sub = getUserSubscription();
-  if (!sub || !isSubscriptionActive()) return false;
-  
-  const remaining = getRemainingImages();
-  if (remaining <= 0) return false;
-  
-  sub.imagesUsed += 1;
-  setUserSubscription(sub);
-  return true;
-};
+// Legacy functions for backward compatibility
+export const isSubscriptionActive = () => false; // Will be updated to use user context
+export const getRemainingImages = () => 0; // Will be updated to use user context  
+export const useImage = () => false; // Will be updated to use user context

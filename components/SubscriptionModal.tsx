@@ -1,49 +1,38 @@
 import React, { useState } from 'react';
 import { useLocalization } from '../contexts/LocalizationContext';
-import { useAuth } from '../contexts/AuthContext';
-import { SUBSCRIPTION_PLANS, createSubscriptionPayment, setUserSubscription } from '../services/subscriptionService';
+import { subscriptionService, SUBSCRIPTION_PLANS } from '../services/subscriptionService';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubscribe: () => void;
+  onSubscribe: (referenceId: string) => void;
+  userId: string;
 }
 
-const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, onSubscribe }) => {
+const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, onSubscribe, userId }) => {
   const { t } = useLocalization();
-  const { user } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSubscribe = async (planId: string) => {
-    if (!user) return;
-    
     setLoading(planId);
     try {
-      const paymentLink = await createSubscriptionPayment(planId, user.id);
+      const { paymentUrl, referenceId } = await subscriptionService.createSubscription(userId, planId);
+      
+      // Store reference ID for later verification
+      sessionStorage.setItem('pendingSubscription', referenceId);
       
       // Open payment link
-      window.open(paymentLink.url, '_blank');
+      window.open(paymentUrl, '_blank');
       
-      // Simulate subscription activation after payment
+      // For demo purposes, simulate payment success after 3 seconds
       setTimeout(() => {
-        const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + 1);
-        
-        setUserSubscription({
-          planId,
-          startDate: new Date().toISOString(),
-          endDate: endDate.toISOString(),
-          imagesUsed: 0,
-          status: 'active'
-        });
-        
-        onSubscribe();
+        onSubscribe(referenceId);
         onClose();
       }, 3000);
       
     } catch (error) {
       console.error('Subscription error:', error);
-      alert(t('payment_error'));
+      alert('Subscription failed. Please try again.');
     } finally {
       setLoading(null);
     }
@@ -68,12 +57,12 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
             <div key={plan.id} className="border rounded-lg p-6 text-center hover:shadow-lg transition-shadow">
               <h4 className="text-xl font-semibold mb-2">{plan.name}</h4>
               <div className="text-3xl font-bold mb-2">
-                {plan.price.toLocaleString()} {plan.currency}
+                {plan.price.toLocaleString()} IQD
               </div>
               <div className="text-gray-600 mb-4">{t('subscription_per_month')}</div>
               <div className="mb-6">
                 <div className="text-lg font-medium">
-                  {plan.imagesPerMonth === 999 ? t('subscription_unlimited') : `${plan.imagesPerMonth} ${t('payment_images')}`}
+                  {plan.images === 999 ? t('subscription_unlimited') : `${plan.images} ${t('payment_images')}`}
                 </div>
                 <div className="text-sm text-gray-500">{t('subscription_per_month')}</div>
               </div>

@@ -1,43 +1,35 @@
 import React, { useState } from 'react';
 import { useLocalization } from '../contexts/LocalizationContext';
-import { createPaymentLink } from '../services/waylPayment';
+import { subscriptionService, PER_IMAGE_PRICE } from '../services/subscriptionService';
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPaymentSuccess: () => void;
+  onPaymentSuccess: (referenceId: string) => void;
   numImages: number;
+  userId: string;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentSuccess, numImages }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentSuccess, numImages, userId }) => {
   const { t } = useLocalization();
   const [loading, setLoading] = useState(false);
   
-  const pricePerImage = 1000; // 1000 IQD per image
-  const totalAmount = numImages * pricePerImage;
+  const totalAmount = numImages * PER_IMAGE_PRICE;
 
   const handlePayment = async () => {
     setLoading(true);
     try {
-      const referenceId = `img-gen-${Date.now()}`;
-      const paymentLink = await createPaymentLink({
-        referenceId,
-        total: totalAmount,
-        currency: 'IQD',
-        lineItem: [{
-          label: `${numImages} AI Generated Images`,
-          amount: totalAmount,
-          type: 'increase'
-        }],
-        redirectionUrl: window.location.origin
-      });
-
+      const { paymentUrl, referenceId } = await subscriptionService.createOneTimePayment(userId, numImages);
+      
+      // Store reference ID for later verification
+      sessionStorage.setItem('pendingPayment', referenceId);
+      
       // Open payment link in new window
-      window.open(paymentLink.url, '_blank');
+      window.open(paymentUrl, '_blank');
       
       // For demo purposes, simulate payment success after 3 seconds
       setTimeout(() => {
-        onPaymentSuccess();
+        onPaymentSuccess(referenceId);
         onClose();
       }, 3000);
       
@@ -70,12 +62,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
           </div>
           <div className="flex justify-between items-center mb-2">
             <span>{t('payment_price_per_image')}</span>
-            <span>{pricePerImage.toLocaleString()} {t('payment_currency')}</span>
+            <span>{PER_IMAGE_PRICE.toLocaleString()} IQD</span>
           </div>
           <hr className="my-3" />
           <div className="flex justify-between items-center font-semibold text-lg">
             <span>{t('payment_total')}</span>
-            <span>{totalAmount.toLocaleString()} {t('payment_currency')}</span>
+            <span>{totalAmount.toLocaleString()} IQD</span>
           </div>
         </div>
 

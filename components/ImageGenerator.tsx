@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Category, FormField } from '../types';
 import { useLocalization } from '../contexts/LocalizationContext';
 import { analyzeImageForSuggestions } from '../services/geminiService';
+import { saveFormData, getFormData } from '../utils/formCache';
 
 interface ImageGeneratorProps {
   category: Category;
@@ -31,6 +32,8 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
           const reader = new FileReader();
           reader.onloadend = () => { setPreview(reader.result as string); };
           reader.readAsDataURL(imageFile);
+        } else if (typeof imageFile === 'string' && imageFile.startsWith('data:')) {
+          setPreview(imageFile);
         } else {
           setPreview(null);
         }
@@ -42,22 +45,40 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
       setupPreview('consistencyReferenceImage', setConsistencyPreview);
       setupPreview('personImage', setPersonPreview);
     } else {
-      const initialFormState: Record<string, string> = {};
-      category.fields.forEach(field => {
-        if (field.type !== 'file') {
-          initialFormState[field.name] = field.type === 'select' && field.optionKeys ? field.optionKeys[0] : '';
-        }
-      });
-      initialFormState['numImages'] = 'option_numImages_3'; // Default to 3 images
-      setFormData(initialFormState);
-      setImagePreview(null);
-      setBackgroundPreview(null);
-      setModelPreview(null);
-      setClothingPreview(null);
-      setConsistencyPreview(null);
-      setPersonPreview(null);
+      // Try to load cached form data first
+      const cachedData = getFormData(t(category.nameKey));
+      if (cachedData) {
+        setFormData(cachedData);
+        // Setup previews for cached data
+        Object.entries(cachedData).forEach(([key, value]) => {
+          if (typeof value === 'string' && value.startsWith('data:')) {
+            if (key === 'productImage') setImagePreview(value);
+            else if (key === 'backgroundReferenceImage') setBackgroundPreview(value);
+            else if (key === 'modelImage') setModelPreview(value);
+            else if (key === 'clothingImage') setClothingPreview(value);
+            else if (key === 'consistencyReferenceImage') setConsistencyPreview(value);
+            else if (key === 'personImage') setPersonPreview(value);
+          }
+        });
+      } else {
+        // Use default form state
+        const initialFormState: Record<string, string> = {};
+        category.fields.forEach(field => {
+          if (field.type !== 'file') {
+            initialFormState[field.name] = field.type === 'select' && field.optionKeys ? field.optionKeys[0] : '';
+          }
+        });
+        initialFormState['numImages'] = 'option_numImages_1';
+        setFormData(initialFormState);
+        setImagePreview(null);
+        setBackgroundPreview(null);
+        setModelPreview(null);
+        setClothingPreview(null);
+        setConsistencyPreview(null);
+        setPersonPreview(null);
+      }
     }
-  }, [category, initialData]);
+  }, [category, initialData, t]);
 
   const handleRemoveImage = (fieldName: string) => {
     setFormData(prev => {
@@ -83,7 +104,11 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
         const files = (e.target as HTMLInputElement).files;
         if (files && files[0]) {
             const file = files[0];
-            setFormData(prev => ({ ...prev, [name]: file }));
+            setFormData(prev => {
+              const newData = { ...prev, [name]: file };
+              saveFormData(t(category.nameKey), newData);
+              return newData;
+            });
             const reader = new FileReader();
             reader.onloadend = () => {
                 const result = reader.result as string;
@@ -97,7 +122,11 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
             reader.readAsDataURL(file);
         }
     } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => {
+          const newData = { ...prev, [name]: value };
+          saveFormData(t(category.nameKey), newData);
+          return newData;
+        });
     }
   };
 
