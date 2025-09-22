@@ -69,6 +69,12 @@ export const locales: { [key in Locale]: Translations } = {
     auth_need_account: 'تحتاج حساب؟ أنشئ حساباً جديداً',
     auth_signup_success: 'تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.',
     
+    loading: 'جاري التحميل...',
+    monthly_plan: 'الخطة الشهرية',
+    ai_generated_images: 'صور مولدة بالذكاء الاصطناعي',
+    invalid_subscription_plan: 'خطة اشتراك غير صالحة',
+    images_for_days: 'صور لمدة {days} أيام',
+    
     payment_title: 'الدفع',
     payment_item: 'العنصر',
     payment_images: 'صور',
@@ -90,6 +96,7 @@ export const locales: { [key in Locale]: Translations } = {
     subscription_remaining: 'صورة متبقية',
     subscription_expired: 'انتهى الاشتراك',
     subscription_upgrade: 'ترقية الخطة',
+    subscription_days: 'أيام',
 
     button_upload_file: 'رفع ملف',
     button_select_other_file: 'اختر ملف آخر',
@@ -643,6 +650,12 @@ export const locales: { [key in Locale]: Translations } = {
     auth_need_account: 'Need an account? Sign up',
     auth_signup_success: 'Account created successfully! You can now sign in.',
     
+    loading: 'Loading...',
+    monthly_plan: 'Monthly Plan',
+    ai_generated_images: 'AI Generated Images',
+    invalid_subscription_plan: 'Invalid subscription plan',
+    images_for_days: 'images for {days} days',
+    
     payment_title: 'Payment',
     payment_item: 'Item',
     payment_images: 'images',
@@ -664,6 +677,7 @@ export const locales: { [key in Locale]: Translations } = {
     subscription_remaining: 'images remaining',
     subscription_expired: 'Subscription Expired',
     subscription_upgrade: 'Upgrade Plan',
+    subscription_days: 'days',
 
     button_upload_file: 'Upload a file',
     button_select_other_file: 'Select another file',

@@ -74,15 +74,25 @@ class WaylPaymentService {
   }): Promise<WaylLink> {
     const { referenceId, amount, description } = params;
     
-    const { data, error } = await supabase.functions.invoke('wayl-payment', {
-      body: { referenceId, amount, description }
-    });
-    
-    if (error) {
-      throw new Error(`Payment creation failed: ${error.message}`);
+    try {
+      const { data, error } = await supabase.functions.invoke('wayl-payment', {
+        body: { referenceId, amount, description }
+      });
+      
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Payment creation failed: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error('No data returned from payment function');
+      }
+      
+      return data.data;
+    } catch (err) {
+      console.error('Payment link creation error:', err);
+      throw new Error(`Payment creation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
-    
-    return data.data;
   }
 
   async getPaymentLink(referenceId: string): Promise<WaylLink> {

@@ -17,13 +17,16 @@ interface HistoryProps {
 
 const History: React.FC<HistoryProps> = ({ onBack }) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { t } = useLocalization();
   const { user } = useAuth();
 
   const loadHistory = async () => {
     if (!user) return;
+    setLoading(true);
     const historyData = await getHistory(user.id);
     setHistory(historyData);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -50,6 +53,25 @@ const History: React.FC<HistoryProps> = ({ onBack }) => {
     await clearHistory(user.id);
     setHistory([]);
   };
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-4xl px-4">
+        <div className="flex items-center mb-6">
+          <button onClick={onBack} className="text-gray-500 hover:text-gray-800 transition mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('history_title')}</h2>
+        </div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500 text-lg">{t('loading')}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (history.length === 0) {
     return (

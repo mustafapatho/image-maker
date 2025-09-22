@@ -22,12 +22,20 @@ export const saveToHistory = async (
         category_name: categoryName,
         images,
         form_data: formData,
-        user_id: userId
+        user_id: userId,
+        images_count: images.length,
+        cost_type: 'subscription' // Will be determined by payment logic
       });
 
     if (error) {
       console.error('Error saving to history:', error);
     }
+    
+    // Update user's total images generated
+    await supabase.rpc('increment_user_images', {
+      user_id: userId,
+      count: images.length
+    });
   } catch (error) {
     console.error('Error saving to history:', error);
   }

@@ -3,28 +3,33 @@ const FORM_CACHE_KEY = 'form_cache';
 export const saveFormData = (categoryName: string, formData: Record<string, string | File>) => {
   try {
     const cache = getFormCache();
-    // Convert File objects to base64 for storage
+    // Only save non-file data to avoid quota issues
     const serializableData: Record<string, string> = {};
     
     Object.entries(formData).forEach(([key, value]) => {
-      if (value instanceof File) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          serializableData[key] = reader.result as string;
-          cache[categoryName] = serializableData;
-          localStorage.setItem(FORM_CACHE_KEY, JSON.stringify(cache));
-        };
-        reader.readAsDataURL(value);
-      } else {
+      if (!(value instanceof File)) {
         serializableData[key] = value as string;
       }
     });
     
-    // Save non-file data immediately
     cache[categoryName] = serializableData;
     localStorage.setItem(FORM_CACHE_KEY, JSON.stringify(cache));
   } catch (error) {
-    console.warn('Failed to save form data:', error);
+    if (error.name === 'QuotaExceededError') {
+      // Clear old cache and try again
+      localStorage.removeItem(FORM_CACHE_KEY);
+      try {
+        const newCache = { [categoryName]: {} };
+        Object.entries(formData).forEach(([key, value]) => {
+          if (!(value instanceof File)) {
+            newCache[categoryName][key] = value as string;
+          }
+        });
+        localStorage.setItem(FORM_CACHE_KEY, JSON.stringify(newCache));
+      } catch {
+        console.warn('LocalStorage quota exceeded, form caching disabled');
+      }
+    }
   }
 };
 

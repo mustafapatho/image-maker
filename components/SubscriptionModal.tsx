@@ -24,11 +24,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
       // Open payment link
       window.open(paymentUrl, '_blank');
       
-      // For demo purposes, simulate payment success after 3 seconds
-      setTimeout(() => {
-        onSubscribe(referenceId);
-        onClose();
-      }, 3000);
+      // Close modal and let webhook handle success
+      onClose();
       
     } catch (error) {
       console.error('Subscription error:', error);
@@ -62,9 +59,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
               <div className="text-gray-600 mb-4">{t('subscription_per_month')}</div>
               <div className="mb-6">
                 <div className="text-lg font-medium">
-                  {plan.images === 999 ? t('subscription_unlimited') : `${plan.images} ${t('payment_images')}`}
+                  {plan.images_included === 999 ? t('subscription_unlimited') : `${plan.images_included} ${t('payment_images')}`}
                 </div>
-                <div className="text-sm text-gray-500">{t('subscription_per_month')}</div>
+                <div className="text-sm text-gray-500">{plan.duration_days} {t('subscription_days')}</div>
               </div>
               <button
                 onClick={() => handleSubscribe(plan.id)}

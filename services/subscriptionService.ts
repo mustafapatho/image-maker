@@ -1,212 +1,262 @@
+import { supabase } from './supabase';
 import { waylPaymentService } from './waylPaymentService';
-
-interface Subscription {
-  id: string;
-  userId: string;
-  planId: string;
-  status: 'active' | 'expired' | 'cancelled';
-  startDate: string;
-  endDate: string;
-  imagesRemaining: number;
-  totalImages: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { translate } from '../utils/translate';
 
 interface SubscriptionPlan {
   id: string;
   name: string;
   price: number;
   currency: string;
-  images: number;
-  duration: number; // days
+  images_included: number;
+  duration_days: number;
 }
-
-// Subscription plans
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
-  {
-    id: 'basic',
-    name: 'Basic Plan',
-    price: 19000,
-    currency: 'IQD',
-    images: 100,
-    duration: 30,
-  },
-  {
-    id: 'pro',
-    name: 'Pro Plan', 
-    price: 39000,
-    currency: 'IQD',
-    images: 250,
-    duration: 30,
-  },
-  {
-    id: 'premium',
-    name: 'Premium Plan',
-    price: 69000,
-    currency: 'IQD',
-    images: 500,
-    duration: 30,
-  },
-];
 
 // Per-image pricing
 export const PER_IMAGE_PRICE = 2000; // IQD
 
+// Default subscription plans
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+  {
+    id: 'monthly_100',
+    name: 'Monthly Plan',
+    price: 19000,
+    currency: 'IQD',
+    images_included: 100,
+    duration_days: 30
+  }
+];
+
 class SubscriptionService {
-  private getStorageKey(userId: string): string {
-    return `subscription_${userId}`;
+  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    const { data, error } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('is_active', true);
+    
+    if (error) {
+      console.warn('Failed to fetch subscription plans from database, using defaults:', error);
+      return SUBSCRIPTION_PLANS;
+    }
+    
+    // If no plans in database, return hardcoded defaults
+    return data && data.length > 0 ? data : SUBSCRIPTION_PLANS;
   }
 
-  private getUsageKey(userId: string): string {
-    return `usage_${userId}`;
-  }
-
-  getCurrentSubscription(userId: string): Subscription | null {
+  async getCurrentSubscription(userId: string) {
     try {
-      const stored = localStorage.getItem(this.getStorageKey(userId));
-      if (!stored) return null;
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .gt('end_date', new Date().toISOString())
+        .single();
       
-      const subscription: Subscription = JSON.parse(stored);
-      
-      // Check if subscription is expired
-      if (new Date(subscription.endDate) < new Date()) {
-        subscription.status = 'expired';
-        this.saveSubscription(subscription);
+      if (error && error.code !== 'PGRST116') {
+        console.warn('getCurrentSubscription error:', error);
+        return null;
       }
-      
-      return subscription;
-    } catch {
+      return data;
+    } catch (error) {
+      console.warn('getCurrentSubscription failed:', error);
       return null;
     }
   }
 
-  private saveSubscription(subscription: Subscription): void {
-    localStorage.setItem(this.getStorageKey(subscription.userId), JSON.stringify(subscription));
+  async getUserCredits(userId: string) {
+    const { data, error } = await supabase
+      .from('user_credits')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
   }
 
   async createSubscription(userId: string, planId: string): Promise<{ paymentUrl: string; referenceId: string }> {
-    const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
+    console.log('Creating subscription for planId:', planId);
+    const plans = await this.getSubscriptionPlans();
+    console.log('Available plans:', plans);
+    let plan = plans.find(p => p.id === planId);
+    console.log('Found plan:', plan);
+    if (!plan && plans.length > 0) {
+      console.warn('Plan not found, using first available plan');
+      plan = plans[0];
+    }
     if (!plan) {
-      throw new Error('Invalid subscription plan');
+      console.error('No plans available');
+      throw new Error(translate('invalid_subscription_plan'));
     }
 
     const referenceId = `sub_${userId}_${planId}_${Date.now()}`;
     
+    // Create payment record
+    await supabase.from('payments').insert({
+      user_id: userId,
+      reference_id: referenceId,
+      payment_type: 'subscription',
+      plan_id: planId,
+      amount: plan.price,
+      status: 'pending',
+      payment_method: 'wayl'
+    });
+    
     const paymentLink = await waylPaymentService.createPaymentLink({
       referenceId,
       amount: plan.price,
-      description: `${plan.name} - ${plan.images} images for ${plan.duration} days`,
+      description: `${plan.name} - ${plan.images_included} ${translate('images_for_days', { days: plan.duration_days })}`,
     });
 
-    return {
-      paymentUrl: paymentLink.url,
-      referenceId,
-    };
+    return { paymentUrl: paymentLink.url, referenceId };
   }
 
   async createOneTimePayment(userId: string, numImages: number): Promise<{ paymentUrl: string; referenceId: string }> {
     const amount = numImages * PER_IMAGE_PRICE;
     const referenceId = `pay_${userId}_${numImages}_${Date.now()}`;
     
+    // Create payment record
+    await supabase.from('payments').insert({
+      user_id: userId,
+      reference_id: referenceId,
+      payment_type: 'one_time',
+      amount,
+      status: 'pending',
+      payment_method: 'wayl',
+      images_purchased: numImages
+    });
+    
     const paymentLink = await waylPaymentService.createPaymentLink({
       referenceId,
       amount,
-      description: `${numImages} AI Generated Images`,
+      description: `${numImages} ${translate('ai_generated_images')}`,
       numImages,
     });
 
-    return {
-      paymentUrl: paymentLink.url,
-      referenceId,
-    };
+    return { paymentUrl: paymentLink.url, referenceId };
   }
 
-  activateSubscription(userId: string, planId: string, referenceId: string): Subscription {
-    const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
-    if (!plan) {
-      throw new Error('Invalid subscription plan');
-    }
+  async activateSubscription(userId: string, planId: string, referenceId: string) {
+    const plans = await this.getSubscriptionPlans();
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) throw new Error(translate('invalid_subscription_plan'));
 
     const now = new Date();
-    const endDate = new Date(now.getTime() + plan.duration * 24 * 60 * 60 * 1000);
+    const endDate = new Date(now.getTime() + plan.duration_days * 24 * 60 * 60 * 1000);
 
-    const subscription: Subscription = {
-      id: referenceId,
-      userId,
-      planId,
+    // Create subscription
+    const { data: subscription } = await supabase.from('user_subscriptions').insert({
+      user_id: userId,
+      plan_id: planId,
       status: 'active',
-      startDate: now.toISOString(),
-      endDate: endDate.toISOString(),
-      imagesRemaining: plan.images,
-      totalImages: plan.images,
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-    };
+      images_remaining: plan.images_included,
+      total_images: plan.images_included,
+      start_date: now.toISOString(),
+      end_date: endDate.toISOString(),
+      payment_reference: referenceId
+    }).select().single();
 
-    this.saveSubscription(subscription);
+    // Update payment status
+    await supabase.from('payments')
+      .update({ status: 'completed', payment_date: now.toISOString() })
+      .eq('reference_id', referenceId);
+
     return subscription;
   }
 
-  addImages(userId: string, numImages: number): void {
-    // For one-time payments, we'll track usage separately
-    const usageKey = this.getUsageKey(userId);
-    const currentUsage = parseInt(localStorage.getItem(usageKey) || '0');
-    localStorage.setItem(usageKey, (currentUsage + numImages).toString());
+  async addImages(userId: string, numImages: number) {
+    const { data: credits } = await supabase.from('user_credits')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (credits) {
+      await supabase.from('user_credits')
+        .update({ credits_available: credits.credits_available + numImages })
+        .eq('user_id', userId);
+    } else {
+      await supabase.from('user_credits')
+        .insert({ user_id: userId, credits_available: numImages });
+    }
   }
 
-  useImage(userId: string): boolean {
-    const subscription = this.getCurrentSubscription(userId);
+  async useImage(userId: string): Promise<boolean> {
+    // Check if user is premium first
+    const isPremium = await this.isPremiumUser(userId);
+    if (isPremium) {
+      return true; // Premium users have unlimited images
+    }
     
-    if (subscription && subscription.status === 'active' && subscription.imagesRemaining > 0) {
-      // Use subscription image
-      subscription.imagesRemaining--;
-      subscription.updatedAt = new Date().toISOString();
-      this.saveSubscription(subscription);
+    // Try subscription first
+    const subscription = await this.getCurrentSubscription(userId);
+    if (subscription && subscription.images_remaining > 0) {
+      await supabase.from('user_subscriptions')
+        .update({ images_remaining: subscription.images_remaining - 1 })
+        .eq('id', subscription.id);
       return true;
     }
     
-    // Check one-time payment images
-    const usageKey = this.getUsageKey(userId);
-    const availableImages = parseInt(localStorage.getItem(usageKey) || '0');
-    
-    if (availableImages > 0) {
-      localStorage.setItem(usageKey, (availableImages - 1).toString());
+    // Try credits
+    const credits = await this.getUserCredits(userId);
+    if (credits && credits.credits_available > 0) {
+      await supabase.from('user_credits')
+        .update({ 
+          credits_available: credits.credits_available - 1,
+          credits_used: credits.credits_used + 1,
+          last_used_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
       return true;
     }
     
     return false;
   }
 
-  getRemainingImages(userId: string): number {
-    const subscription = this.getCurrentSubscription(userId);
+  async getRemainingImages(userId: string): Promise<number> {
     let remaining = 0;
     
-    if (subscription && subscription.status === 'active') {
-      remaining += subscription.imagesRemaining;
+    const subscription = await this.getCurrentSubscription(userId);
+    if (subscription) {
+      remaining += subscription.images_remaining;
     }
     
-    // Add one-time payment images
-    const usageKey = this.getUsageKey(userId);
-    const oneTimeImages = parseInt(localStorage.getItem(usageKey) || '0');
-    remaining += oneTimeImages;
+    const credits = await this.getUserCredits(userId);
+    if (credits) {
+      remaining += credits.credits_available;
+    }
     
     return remaining;
   }
 
-  isSubscriptionActive(userId: string): boolean {
-    const subscription = this.getCurrentSubscription(userId);
-    return subscription?.status === 'active' || false;
+  async isSubscriptionActive(userId: string): Promise<boolean> {
+    const subscription = await this.getCurrentSubscription(userId);
+    return !!subscription;
   }
 
-  hasAvailableImages(userId: string): boolean {
-    return this.getRemainingImages(userId) > 0;
+  async hasAvailableImages(userId: string): Promise<boolean> {
+    const remaining = await this.getRemainingImages(userId);
+    return remaining > 0;
+  }
+
+  async isPremiumUser(userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('is_premium')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.warn('Failed to check premium status:', error);
+        return false;
+      }
+      
+      return data?.is_premium || false;
+    } catch (error) {
+      console.warn('isPremiumUser failed:', error);
+      return false;
+    }
   }
 }
 
 export const subscriptionService = new SubscriptionService();
-
-// Legacy functions for backward compatibility
-export const isSubscriptionActive = () => false; // Will be updated to use user context
-export const getRemainingImages = () => 0; // Will be updated to use user context  
-export const useImage = () => false; // Will be updated to use user context

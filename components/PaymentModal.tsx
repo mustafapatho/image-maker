@@ -27,11 +27,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
       // Open payment link in new window
       window.open(paymentUrl, '_blank');
       
-      // For demo purposes, simulate payment success after 3 seconds
-      setTimeout(() => {
-        onPaymentSuccess(referenceId);
-        onClose();
-      }, 3000);
+      // Close modal and let webhook handle success
+      onClose();
       
     } catch (error) {
       console.error('Payment error:', error);

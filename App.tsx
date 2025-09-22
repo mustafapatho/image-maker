@@ -8,6 +8,7 @@ import LoadingIndicator from './components/LoadingIndicator';
 import History from './components/History';
 import PaymentModal from './components/PaymentModal';
 import SubscriptionModal from './components/SubscriptionModal';
+import SubscriptionButton from './components/SubscriptionButton';
 import { subscriptionService } from './services/subscriptionService';
 import { generateProductImages } from './services/geminiService';
 import { saveToHistory } from './utils/historyManager';
@@ -62,38 +63,40 @@ const AppContent: React.FC = () => {
     const numImagesStr = (formData.numImages as string) || 'option_numImages_1';
     const numImages = parseInt(numImagesStr.split('_').pop() || '1', 10);
     
-    // Check if user has enough images
-    if (!subscriptionService.hasAvailableImages(user.id)) {
-      setPendingFormData(formData);
-      setShowPaymentModal(true);
-      return;
-    }
-    
-    // Check if user has enough images for the requested amount
-    const availableImages = subscriptionService.getRemainingImages(user.id);
-    if (availableImages < numImages) {
-      setPendingFormData(formData);
-      setShowPaymentModal(true);
-      return;
-    }
-    
-    // Proceed with generation
-    setCurrentStep('loading');
-    setGeneratedImages([]);
-    setError(null);
-    setLastGenerationData(formData);
-    setGenerationProgress({ current: 0, total: numImages });
-
     try {
+      // Check if user is premium, has subscription, or credits
+      const [isPremium, hasSubscription, availableImages] = await Promise.all([
+        subscriptionService.isPremiumUser(user.id),
+        subscriptionService.isSubscriptionActive(user.id),
+        subscriptionService.getRemainingImages(user.id)
+      ]);
+      
+      // If user is premium, has subscription, or enough credits, proceed directly
+      if (isPremium || hasSubscription || availableImages >= numImages) {
+        // Proceed with generation
+      } else {
+        // Show payment modal for users without premium/subscription/credits
+        setPendingFormData(formData);
+        setShowPaymentModal(true);
+        return;
+      }
+      
+      // Proceed with generation
+      setCurrentStep('loading');
+      setGeneratedImages([]);
+      setError(null);
+      setLastGenerationData(formData);
+      setGenerationProgress({ current: 0, total: numImages });
+
       // Use images from subscription/credits
       for (let i = 0; i < numImages; i++) {
-        subscriptionService.useImage(user.id);
+        await subscriptionService.useImage(user.id);
       }
       
       const images = await generateProductImages(selectedCategory, formData, numImages, handleProgress);
       setGeneratedImages(images);
       
-      // Save to history (don't let this fail the generation)
+      // Save to history
       try {
         await saveToHistory(t(selectedCategory.nameKey), images, formData, user.id);
       } catch (historyError) {
@@ -112,22 +115,27 @@ const AppContent: React.FC = () => {
   const handlePaymentSuccess = async (referenceId: string) => {
     if (!user || !pendingFormData) return;
     
-    // Parse reference ID to determine payment type
-    if (referenceId.startsWith('sub_')) {
-      const parts = referenceId.split('_');
-      const planId = parts[2];
-      subscriptionService.activateSubscription(user.id, planId, referenceId);
-    } else if (referenceId.startsWith('pay_')) {
-      const parts = referenceId.split('_');
-      const numImages = parseInt(parts[2]);
-      subscriptionService.addImages(user.id, numImages);
+    try {
+      // Parse reference ID to determine payment type
+      if (referenceId.startsWith('sub_')) {
+        const parts = referenceId.split('_');
+        const planId = parts[2];
+        await subscriptionService.activateSubscription(user.id, planId, referenceId);
+      } else if (referenceId.startsWith('pay_')) {
+        const parts = referenceId.split('_');
+        const numImages = parseInt(parts[2]);
+        await subscriptionService.addImages(user.id, numImages);
+      }
+      
+      setShowPaymentModal(false);
+      
+      // Proceed with generation
+      await handleGenerate(pendingFormData);
+      setPendingFormData(null);
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      setError('Payment processing failed. Please try again.');
     }
-    
-    setShowPaymentModal(false);
-    
-    // Proceed with generation
-    await handleGenerate(pendingFormData);
-    setPendingFormData(null);
   };
 
   const handleBackToCategories = () => {
@@ -217,12 +225,7 @@ const AppContent: React.FC = () => {
                 >
                   {t('view_history')}
                 </button>
-                <button 
-                  onClick={() => setShowSubscriptionModal(true)}
-                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition"
-                >
-                  {subscriptionService.isSubscriptionActive(user.id) ? `${subscriptionService.getRemainingImages(user.id)} ${t('subscription_remaining')}` : t('subscription_subscribe')}
-                </button>
+                <SubscriptionButton userId={user.id} onOpenModal={() => setShowSubscriptionModal(true)} />
                 <button 
                   onClick={async () => {
                     const { error } = await signOut();
