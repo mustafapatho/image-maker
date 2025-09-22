@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalization } from '../contexts/LocalizationContext';
+import { useAuth } from '../contexts/AuthContext';
+import { getHistory, clearHistory } from '../utils/historyManager';
 
 interface HistoryItem {
   id: string;
@@ -16,13 +18,17 @@ interface HistoryProps {
 const History: React.FC<HistoryProps> = ({ onBack }) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const { t } = useLocalization();
+  const { user } = useAuth();
+
+  const loadHistory = async () => {
+    if (!user) return;
+    const historyData = await getHistory(user.id);
+    setHistory(historyData);
+  };
 
   useEffect(() => {
-    const savedHistory = localStorage.getItem('imageHistory');
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory));
-    }
-  }, []);
+    loadHistory();
+  }, [user]);
 
   const handleDownload = (imageUrl: string, index: number, itemId: string) => {
     try {
@@ -39,11 +45,10 @@ const History: React.FC<HistoryProps> = ({ onBack }) => {
     }
   };
 
-  const clearHistory = () => {
-    if (confirm(t('confirm_clear_history'))) {
-      localStorage.removeItem('imageHistory');
-      setHistory([]);
-    }
+  const handleClearHistory = async () => {
+    if (!user || !confirm(t('confirm_clear_history'))) return;
+    await clearHistory(user.id);
+    setHistory([]);
   };
 
   if (history.length === 0) {
@@ -79,7 +84,7 @@ const History: React.FC<HistoryProps> = ({ onBack }) => {
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('history_title')}</h2>
         </div>
         <button
-          onClick={clearHistory}
+          onClick={handleClearHistory}
           className="text-red-600 hover:text-red-800 text-sm font-medium"
         >
           {t('clear_history')}

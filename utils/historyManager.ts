@@ -1,65 +1,77 @@
+import { supabase } from '../services/supabase';
+
 interface HistoryItem {
   id: string;
   categoryName: string;
   images: string[];
   createdAt: string;
   formData: Record<string, any>;
+  userId: string;
 }
 
-export const saveToHistory = (
+export const saveToHistory = async (
   categoryName: string,
   images: string[],
-  formData: Record<string, any>
-): void => {
+  formData: Record<string, any>,
+  userId: string
+): Promise<void> => {
   try {
-    const historyItem: HistoryItem = {
-      id: Date.now().toString(),
-      categoryName,
-      images,
-      createdAt: new Date().toISOString(),
-      formData
-    };
-
-    const existingHistory = localStorage.getItem('imageHistory');
-    const history: HistoryItem[] = existingHistory ? JSON.parse(existingHistory) : [];
-    
-    history.unshift(historyItem);
-    
-    // Keep only last 10 items to save space
-    if (history.length > 10) {
-      history.splice(10);
-    }
-    
-    localStorage.setItem('imageHistory', JSON.stringify(history));
-  } catch (error) {
-    // If storage is full, clear old data and try again
-    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      console.warn('Storage quota exceeded, clearing old history');
-      clearHistory();
-      // Try saving just this item
-      const historyItem: HistoryItem = {
-        id: Date.now().toString(),
-        categoryName,
+    const { error } = await supabase
+      .from('image_history')
+      .insert({
+        category_name: categoryName,
         images,
-        createdAt: new Date().toISOString(),
-        formData
-      };
-      try {
-        localStorage.setItem('imageHistory', JSON.stringify([historyItem]));
-      } catch {
-        console.error('Unable to save to history - storage quota exceeded');
-      }
-    } else {
+        form_data: formData,
+        user_id: userId
+      });
+
+    if (error) {
       console.error('Error saving to history:', error);
     }
+  } catch (error) {
+    console.error('Error saving to history:', error);
   }
 };
 
-export const getHistory = (): HistoryItem[] => {
-  const savedHistory = localStorage.getItem('imageHistory');
-  return savedHistory ? JSON.parse(savedHistory) : [];
+export const getHistory = async (userId: string): Promise<HistoryItem[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('image_history')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Error fetching history:', error);
+      return [];
+    }
+
+    return data.map(item => ({
+      id: item.id,
+      categoryName: item.category_name,
+      images: item.images,
+      createdAt: item.created_at,
+      formData: item.form_data,
+      userId: item.user_id
+    }));
+  } catch (error) {
+    console.error('Error fetching history:', error);
+    return [];
+  }
 };
 
-export const clearHistory = (): void => {
-  localStorage.removeItem('imageHistory');
+export const clearHistory = async (userId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('image_history')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error clearing history:', error);
+    }
+  } catch (error) {
+    console.error('Error clearing history:', error);
+  }
 };

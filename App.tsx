@@ -92,7 +92,14 @@ const AppContent: React.FC = () => {
       
       const images = await generateProductImages(selectedCategory, formData, numImages, handleProgress);
       setGeneratedImages(images);
-      saveToHistory(t(selectedCategory.nameKey), images, formData);
+      
+      // Save to history (don't let this fail the generation)
+      try {
+        await saveToHistory(t(selectedCategory.nameKey), images, formData, user.id);
+      } catch (historyError) {
+        console.error('Failed to save to history:', historyError);
+      }
+      
       setCurrentStep('result');
     } catch (err) {
       console.error(err);
