@@ -256,7 +256,6 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
           <div key={field.name}>
             <label htmlFor={field.name} className="block text-sm font-semibold text-gray-700 mb-1">
               {t(field.labelKey)} {field.required && <span className="text-red-500">*</span>}
-              {field.infoKey && <span className="text-gray-400 font-normal ml-2"> - {t(field.infoKey)}</span>}
             </label>
             {field.type === 'file' ? (
                 renderFileInput(field)

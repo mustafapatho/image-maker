@@ -46,7 +46,7 @@ const SubscriptionButton: React.FC<SubscriptionButtonProps> = ({ userId, onOpenM
   if (isPremium) {
     return (
       <div className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md bg-purple-100 text-purple-700">
-        Premium User
+        {t('premium_user')}
       </div>
     );
   }

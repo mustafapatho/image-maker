@@ -919,7 +919,7 @@ ${data.customConcept}
     fields: [
       { name: 'productImage', labelKey: 'field_retouchImage_label', type: 'file', required: true },
       { name: 'task', labelKey: 'field_task_label', type: 'select', optionKeys: ['option_task_remove', 'option_task_composite', 'option_task_retouch', 'option_task_color', 'option_task_restore', 'option_task_upscale'], required: true },
-      { name: 'taskDescription', labelKey: 'field_taskDescription_label', type: 'textarea', placeholderKey: 'field_taskDescription_placeholder', required: true, infoKey: 'field_taskDescription_info' },
+      { name: 'taskDescription', labelKey: 'field_taskDescription_label', type: 'textarea', placeholderKey: 'field_taskDescription_placeholder', required: true },
       { name: 'backgroundReferenceImage', labelKey: 'field_compositeImage_label', type: 'file', required: false, infoKey: 'field_compositeImage_info', condition: { field: 'task', value: 'option_task_composite' } },
       { name: 'numImages', labelKey: 'field_numImages_label', type: 'select', optionKeys: ['option_numImages_1', 'option_numImages_2', 'option_numImages_3', 'option_numImages_4', 'option_numImages_5', 'option_numImages_6', 'option_numImages_7', 'option_numImages_8', 'option_numImages_9', 'option_numImages_10'], required: true },
     ],
