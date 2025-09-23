@@ -25,6 +25,17 @@ async function callGemini(prompt: string, imageData?: any, model?: string) {
     throw new Error('No data returned from Edge Function');
   }
 
+
+  if (data.error) {
+    console.error("Gemini API Error:", data.error);
+    throw new Error(data.error.message || 'Gemini API returned an error');
+  }
+
+  if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+    console.error("Invalid API response:", data);
+    throw new Error('Invalid response from Gemini API - no candidates returned');
+  }
+
   return data;
 }
 
@@ -55,7 +66,20 @@ export const analyzeImageForSuggestions = async (
     try {
         const response = await callGemini(prompt, imageData, 'gemini-2.0-flash');
         
-        let text = response.candidates[0].content.parts[0].text.trim();
+        if (!response?.candidates?.length) {
+            throw new Error("No candidates returned from AI");
+        }
+        
+        const candidate = response.candidates[0];
+        if (!candidate?.content?.parts?.length) {
+            throw new Error("Invalid response structure from AI");
+        }
+        
+        let text = candidate.content.parts[0].text?.trim();
+        if (!text) {
+            throw new Error("No text content in AI response");
+        }
+        
         if (text.startsWith("```json")) {
             text = text.substring(7, text.length - 3).trim();
         } else if (text.startsWith("```")) {
@@ -100,9 +124,10 @@ export const generateProductImages = async (
     throw new Error("Image file is missing.");
   }
   
-  // Resolve option keys to their English translations before generating prompt
+  
   const resolvedData = resolveOptionKeys(formData);
-  const prompt = category.promptTemplate(resolvedData);
+  let prompt = category.promptTemplate(resolvedData);
+  prompt = `GENERATE AN IMAGE (not text description): ${prompt}`;
   console.log("Generated Prompt:", prompt);
   
   const mainImageData = await fileToBase64(imageFile);
@@ -110,7 +135,15 @@ export const generateProductImages = async (
   const generateSingleImage = async (): Promise<string> => {
     const response = await callGemini(prompt, mainImageData, 'gemini-2.5-flash-image-preview');
     
+    if (!response?.candidates?.length) {
+      throw new Error("No candidates returned from AI");
+    }
+    
     const candidate = response.candidates[0];
+    if (!candidate?.content?.parts?.length) {
+      throw new Error("Invalid response structure from AI");
+    }
+    
     for (const part of candidate.content.parts) {
       if (part.inlineData) {
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
