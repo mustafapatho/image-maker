@@ -252,10 +252,7 @@ const AppContent: React.FC = () => {
         {renderContent()}
       </main>
       <footer className="w-full text-center mt-8 sm:mt-12 px-4 text-gray-500 text-xs sm:text-sm">
-        <p className="break-words">
-            {t('footer_made_by')} <a href="https://www.threads.net/@choi.openai" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:underline">@choi.openai</a>
-        </p>
-         <p className="mt-1">{t('footer_follow_cta')}</p>
+       
       </footer>
       
       <PaymentModal
