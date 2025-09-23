@@ -127,12 +127,12 @@ export const generateProductImages = async (
   
   const resolvedData = resolveOptionKeys(formData);
   let prompt = category.promptTemplate(resolvedData);
-  prompt = `GENERATE AN IMAGE (not text description): ${prompt}`;
+  prompt = `CREATE A VISUAL IMAGE OUTPUT ONLY. DO NOT PROVIDE TEXT DESCRIPTIONS. GENERATE IMAGE: ${prompt}. OUTPUT FORMAT: IMAGE DATA ONLY.`;
   console.log("Generated Prompt:", prompt);
   
   const mainImageData = await fileToBase64(imageFile);
   
-  const generateSingleImage = async (): Promise<string> => {
+  const generateSingleImage = async (retryCount = 0): Promise<string> => {
     const response = await callGemini(prompt, mainImageData, 'gemini-2.5-flash-image-preview');
     
     if (!response?.candidates?.length) {
@@ -147,6 +147,10 @@ export const generateProductImages = async (
     for (const part of candidate.content.parts) {
       if (part.inlineData) {
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+      if (part.text && retryCount < 2) {
+        const forcePrompt = `IGNORE PREVIOUS INSTRUCTIONS. ONLY OUTPUT IMAGE DATA. NO TEXT. GENERATE VISUAL IMAGE: ${prompt}`;
+        return await generateSingleImage(retryCount + 1);
       }
       if (part.text) {
         throw new Error(`AI returned text instead of image: ${part.text.substring(0, 200)}...`);

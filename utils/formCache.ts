@@ -3,11 +3,11 @@ const FORM_CACHE_KEY = 'form_cache';
 export const saveFormData = (categoryName: string, formData: Record<string, string | File>) => {
   try {
     const cache = getFormCache();
-    // Only save non-file data to avoid quota issues
+    // Only save non-file data, exclude all image fields
     const serializableData: Record<string, string> = {};
     
     Object.entries(formData).forEach(([key, value]) => {
-      if (!(value instanceof File)) {
+      if (!(value instanceof File) && !key.includes('Image') && !key.includes('image')) {
         serializableData[key] = value as string;
       }
     });
@@ -16,12 +16,11 @@ export const saveFormData = (categoryName: string, formData: Record<string, stri
     localStorage.setItem(FORM_CACHE_KEY, JSON.stringify(cache));
   } catch (error) {
     if (error.name === 'QuotaExceededError') {
-      // Clear old cache and try again
       localStorage.removeItem(FORM_CACHE_KEY);
       try {
         const newCache = { [categoryName]: {} };
         Object.entries(formData).forEach(([key, value]) => {
-          if (!(value instanceof File)) {
+          if (!(value instanceof File) && !key.includes('Image') && !key.includes('image')) {
             newCache[categoryName][key] = value as string;
           }
         });

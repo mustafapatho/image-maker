@@ -46,21 +46,11 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
       setupPreview('consistencyReferenceImage', setConsistencyPreview);
       setupPreview('personImage', setPersonPreview);
     } else {
-      // Try to load cached form data first
+      // Try to load cached form data first (text fields only)
       const cachedData = getFormData(t(category.nameKey));
       if (cachedData) {
         setFormData(cachedData);
-        // Setup previews for cached data
-        Object.entries(cachedData).forEach(([key, value]) => {
-          if (typeof value === 'string' && value.startsWith('data:')) {
-            if (key === 'productImage') setImagePreview(value);
-            else if (key === 'backgroundReferenceImage') setBackgroundPreview(value);
-            else if (key === 'modelImage') setModelPreview(value);
-            else if (key === 'clothingImage') setClothingPreview(value);
-            else if (key === 'consistencyReferenceImage') setConsistencyPreview(value);
-            else if (key === 'personImage') setPersonPreview(value);
-          }
-        });
+        // No image previews from cache - user must upload fresh images
       } else {
         // Use default form state
         const initialFormState: Record<string, string> = {};
@@ -99,12 +89,44 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+      
+      img.onload = () => {
+        const maxSize = /Mobi|Android/i.test(navigator.userAgent) ? 800 : 1200;
+        let { width, height } = img;
+        
+        if (width > height && width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          resolve(new File([blob!], file.name, { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.8);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
      if (e.target.type === 'file') {
         const files = (e.target as HTMLInputElement).files;
         if (files && files[0]) {
-            const file = files[0];
+            const originalFile = files[0];
+            const file = await compressImage(originalFile);
             setFormData(prev => {
               const newData = { ...prev, [name]: file };
               saveFormData(t(category.nameKey), newData);
