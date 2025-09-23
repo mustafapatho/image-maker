@@ -10,9 +10,10 @@ interface ImageGeneratorProps {
   onBack: () => void;
   error: string | null;
   initialData: Record<string, string | File> | null;
+  isGenerating?: boolean;
 }
 
-const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, onBack, error, initialData }) => {
+const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, onBack, error, initialData, isGenerating = false }) => {
   const [formData, setFormData] = useState<Record<string, string | File>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null);
@@ -300,7 +301,8 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({ category, onGenerate, o
         {error && <p className="text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white font-bold py-3 px-4 text-sm sm:text-base rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform duration-150 ease-in-out active:scale-[0.98] flex items-center justify-center space-x-2"
+          disabled={isGenerating}
+          className="w-full bg-blue-600 text-white font-bold py-3 px-4 text-sm sm:text-base rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform duration-150 ease-in-out active:scale-[0.98] flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span>{t('button_generate')}</span>
            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

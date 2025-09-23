@@ -29,6 +29,7 @@ const AppContent: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<Record<string, string | File> | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -58,10 +59,12 @@ const AppContent: React.FC = () => {
   };
 
   const handleGenerate = async (formData: Record<string, string | File>) => {
-    if (!selectedCategory || !user) return;
+    if (!selectedCategory || !user || isGenerating) return;
     
     const numImagesStr = (formData.numImages as string) || 'option_numImages_1';
     const numImages = parseInt(numImagesStr.split('_').pop() || '1', 10);
+    
+    setIsGenerating(true);
     
     try {
       // Check if user is premium, has subscription, or credits
@@ -109,6 +112,8 @@ const AppContent: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(`${t('error_generation_failed')} ${errorMessage}`);
       setCurrentStep('generator');
+    } finally {
+      setIsGenerating(false);
     }
   };
   
@@ -144,12 +149,14 @@ const AppContent: React.FC = () => {
     setGeneratedImages([]);
     setLastGenerationData(null);
     setError(null);
+    setIsGenerating(false);
   };
   
   const handleBackToGenerator = () => {
     setCurrentStep('generator');
     setGeneratedImages([]);
     setError(null);
+    setIsGenerating(false);
   };
 
   const handleGenerateAgain = () => {
@@ -190,6 +197,7 @@ const AppContent: React.FC = () => {
               onBack={handleBackToCategories}
               error={error}
               initialData={lastGenerationData}
+              isGenerating={isGenerating}
             />
           );
         }

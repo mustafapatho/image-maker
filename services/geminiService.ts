@@ -115,6 +115,9 @@ export const generateProductImages = async (
       if (part.inlineData) {
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
       }
+      if (part.text) {
+        throw new Error(`AI returned text instead of image: ${part.text.substring(0, 200)}...`);
+      }
     }
     
     throw new Error("No image returned from API");

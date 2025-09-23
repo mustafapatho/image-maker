@@ -161,6 +161,11 @@ class SubscriptionService {
       .update({ status: 'completed', payment_date: now.toISOString() })
       .eq('reference_id', referenceId);
 
+    // Set user as premium
+    await supabase.from('user_profiles')
+      .update({ is_premium: true })
+      .eq('id', userId);
+
     return subscription;
   }
 
@@ -178,6 +183,11 @@ class SubscriptionService {
       await supabase.from('user_credits')
         .insert({ user_id: userId, credits_available: numImages });
     }
+
+    // Set user as premium
+    await supabase.from('user_profiles')
+      .update({ is_premium: true })
+      .eq('id', userId);
   }
 
   async useImage(userId: string): Promise<boolean> {

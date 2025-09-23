@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import crypto from 'crypto';
+import { subscriptionService } from '../../../services/subscriptionService';
 
 const WAYL_WEBHOOK_SECRET = process.env.WAYL_WEBHOOK_SECRET;
 
@@ -60,6 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const userId = parts[1];
       const planId = parts[2];
       
+      await subscriptionService.activateSubscription(userId, planId, referenceId);
       console.log(`Subscription activated: ${userId}, plan: ${planId}`);
       
     } else if (referenceId.startsWith('pay_')) {
@@ -68,6 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const userId = parts[1];
       const numImages = parseInt(parts[2]);
       
+      await subscriptionService.addImages(userId, numImages);
       console.log(`One-time payment processed: ${userId}, images: ${numImages}`);
     }
 

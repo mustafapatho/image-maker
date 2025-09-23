@@ -61,3 +61,11 @@ const getFormCache = (): Record<string, Record<string, string>> => {
     return {};
   }
 };
+
+export const clearAllFormCache = () => {
+  try {
+    localStorage.removeItem(FORM_CACHE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear form cache:', error);
+  }
+};
