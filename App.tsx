@@ -9,6 +9,7 @@ import History from './components/History';
 import PaymentModal from './components/PaymentModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import SubscriptionButton from './components/SubscriptionButton';
+import UserStats from './components/UserStats';
 import { subscriptionService } from './services/subscriptionService';
 import { generateProductImages } from './services/geminiService';
 import { saveToHistory } from './utils/historyManager';
@@ -227,6 +228,7 @@ const AppContent: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center space-x-2 flex-1 sm:justify-end justify-center">
+                <UserStats userId={user.id} />
                 <button 
                   onClick={handleViewHistory}
                   className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition"

@@ -19,7 +19,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'monthly_100',
     name: 'Monthly Plan',
-    price: 19000,
+    price: 15000,
     currency: 'IQD',
     images_included: 100,
     duration_days: 30
@@ -28,18 +28,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 
 class SubscriptionService {
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-    const { data, error } = await supabase
-      .from('subscription_plans')
-      .select('*')
-      .eq('is_active', true);
-    
-    if (error) {
-      console.warn('Failed to fetch subscription plans from database, using defaults:', error);
-      return SUBSCRIPTION_PLANS;
-    }
-    
-    // If no plans in database, return hardcoded defaults
-    return data && data.length > 0 ? data : SUBSCRIPTION_PLANS;
+    // Always return hardcoded plans to ensure correct pricing
+    return SUBSCRIPTION_PLANS;
   }
 
   async getCurrentSubscription(userId: string) {
@@ -191,10 +181,10 @@ class SubscriptionService {
   }
 
   async useImage(userId: string): Promise<boolean> {
-    // Check if user is premium first
+    // Check if user is premium and needs monthly quota
     const isPremium = await this.isPremiumUser(userId);
     if (isPremium) {
-      return true; // Premium users have unlimited images
+      await this.ensurePremiumSubscription(userId);
     }
     
     // Try subscription first
@@ -225,14 +215,31 @@ class SubscriptionService {
   async getRemainingImages(userId: string): Promise<number> {
     let remaining = 0;
     
-    const subscription = await this.getCurrentSubscription(userId);
-    if (subscription) {
-      remaining += subscription.images_remaining;
-    }
-    
-    const credits = await this.getUserCredits(userId);
-    if (credits) {
-      remaining += credits.credits_available;
+    // Check if user is premium and needs monthly quota
+    const isPremium = await this.isPremiumUser(userId);
+    if (isPremium) {
+      await this.ensurePremiumSubscription(userId);
+
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const { data: monthlyUsage } = await supabase
+        .from('image_history')
+        .select('id')
+        .eq('user_id', userId)
+        .gte('created_at', startOfMonth.toISOString());
+      
+      const usedThisMonth = monthlyUsage?.length || 0;
+      remaining = Math.max(0, 100 - usedThisMonth);
+    } else {
+      const subscription = await this.getCurrentSubscription(userId);
+      if (subscription) {
+        remaining += subscription.images_remaining;
+      }
+      
+      const credits = await this.getUserCredits(userId);
+      if (credits) {
+        remaining += credits.credits_available;
+      }
     }
     
     return remaining;
@@ -265,6 +272,43 @@ class SubscriptionService {
     } catch (error) {
       console.warn('isPremiumUser failed:', error);
       return false;
+    }
+  }
+
+  async ensurePremiumSubscription(userId: string) {
+    const subscription = await this.getCurrentSubscription(userId);
+    const now = new Date();
+    
+    // Calculate remaining based on monthly usage
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const { data: monthlyUsage } = await supabase
+      .from('image_history')
+      .select('id')
+      .eq('user_id', userId)
+      .gte('created_at', startOfMonth.toISOString());
+    
+    const usedThisMonth = monthlyUsage?.length || 0;
+    const remaining = Math.max(0, 100 - usedThisMonth);
+    
+    if (!subscription) {
+      // Create new subscription
+      const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      
+      await supabase.from('user_subscriptions').insert({
+        user_id: userId,
+        plan_id: 'monthly_100',
+        status: 'active',
+        images_remaining: remaining,
+        total_images: 100,
+        start_date: now.toISOString(),
+        end_date: endDate.toISOString(),
+        payment_reference: `premium_${userId}_${Date.now()}`
+      });
+    } else {
+      // Update existing subscription with correct remaining count
+      await supabase.from('user_subscriptions')
+        .update({ images_remaining: remaining })
+        .eq('id', subscription.id);
     }
   }
 }
