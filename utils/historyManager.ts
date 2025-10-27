@@ -32,10 +32,20 @@ export const saveToHistory = async (
     }
     
     // Update user's total images generated
-    await supabase.rpc('increment_user_images', {
-      user_id: userId,
-      count: images.length
-    });
+    const { data: currentProfile } = await supabase
+      .from('user_profiles')
+      .select('total_images_generated')
+      .eq('id', userId)
+      .single();
+    
+    const currentCount = currentProfile?.total_images_generated || 0;
+    
+    await supabase
+      .from('user_profiles')
+      .upsert({
+        id: userId,
+        total_images_generated: currentCount + images.length
+      });
   } catch (error) {
     console.error('Error saving to history:', error);
   }

@@ -91,13 +91,15 @@ const AppContent: React.FC = () => {
       setError(null);
       setLastGenerationData(formData);
       setGenerationProgress({ current: 0, total: numImages });
-
-      // Use images from subscription/credits
-      for (let i = 0; i < numImages; i++) {
+      
+      const images = await generateProductImages(selectedCategory, formData, numImages, handleProgress);
+      
+      // Only consume credits after successful generation
+      const successfulImages = images.length;
+      for (let i = 0; i < successfulImages; i++) {
         await subscriptionService.useImage(user.id);
       }
       
-      const images = await generateProductImages(selectedCategory, formData, numImages, handleProgress);
       setGeneratedImages(images);
       
       // Save to history
