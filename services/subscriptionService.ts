@@ -298,6 +298,13 @@ class SubscriptionService {
 
   async updateTotalImagesGenerated(userId: string, count: number, userEmail?: string): Promise<void> {
     try {
+      if (!userEmail) {
+        console.error('No email found for user:', userId);
+        return;
+      }
+      
+      console.log('Updating with email:', userEmail);
+      
       // Get current count from user_profiles
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -308,12 +315,14 @@ class SubscriptionService {
       const currentCount = profile?.total_images_generated || 0;
       const newCount = currentCount + count;
       
+      console.log('Upserting:', { userId, email: userEmail, newCount });
+      
       // Upsert with email to satisfy NOT NULL constraint
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
           id: userId,
-          email: userEmail || 'unknown@example.com',
+          email: userEmail,
           total_images_generated: newCount,
           updated_at: new Date().toISOString()
         });
@@ -322,6 +331,8 @@ class SubscriptionService {
         console.error('Failed to update total_images_generated:', error);
         throw error;
       }
+      
+      console.log('Successfully updated total_images_generated');
     } catch (error) {
       console.error('Error in updateTotalImagesGenerated:', error);
     }
