@@ -65,17 +65,12 @@ class SubscriptionService {
   }
 
   async createSubscription(userId: string, planId: string): Promise<{ paymentUrl: string; referenceId: string }> {
-    console.log('Creating subscription for planId:', planId);
     const plans = await this.getSubscriptionPlans();
-    console.log('Available plans:', plans);
     let plan = plans.find(p => p.id === planId);
-    console.log('Found plan:', plan);
     if (!plan && plans.length > 0) {
-      console.warn('Plan not found, using first available plan');
       plan = plans[0];
     }
     if (!plan) {
-      console.error('No plans available');
       throw new Error(translate('invalid_subscription_plan'));
     }
 
@@ -223,10 +218,7 @@ class SubscriptionService {
         })
         .eq('user_id', userId);
       
-      if (error) {
-        console.error('Error updating credits:', error);
-        return false;
-      }
+      if (error) return false;
       return true;
     }
     
@@ -284,28 +276,18 @@ class SubscriptionService {
         .eq('id', userId)
         .single();
       
-      if (error) {
-        console.warn('Failed to check premium status:', error);
-        return false;
-      }
+      if (error) return false;
       
       return data?.is_premium || false;
     } catch (error) {
-      console.warn('isPremiumUser failed:', error);
       return false;
     }
   }
 
   async updateTotalImagesGenerated(userId: string, count: number, userEmail?: string): Promise<void> {
     try {
-      if (!userEmail) {
-        console.error('No email found for user:', userId);
-        return;
-      }
+      if (!userEmail) return;
       
-      console.log('Updating with email:', userEmail);
-      
-      // Get current count from user_profiles
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('total_images_generated')
@@ -315,25 +297,15 @@ class SubscriptionService {
       const currentCount = profile?.total_images_generated || 0;
       const newCount = currentCount + count;
       
-      console.log('Updating:', { userId, newCount });
-      
-      // Use UPDATE instead of UPSERT to avoid trigger issues
-      const { error } = await supabase
+      await supabase
         .from('user_profiles')
         .update({
           total_images_generated: newCount,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);
-      
-      if (error) {
-        console.error('Failed to update total_images_generated:', error);
-        throw error;
-      }
-      
-      console.log('Successfully updated total_images_generated');
     } catch (error) {
-      console.error('Error in updateTotalImagesGenerated:', error);
+      // Silent fail
     }
   }
 

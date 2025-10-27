@@ -41,16 +41,6 @@ const UserStats: React.FC<UserStatsProps> = ({ userId }) => {
         const usedThisMonth = monthlyUsageResult.data?.reduce((sum, item) => sum + (item.images_count || 1), 0) || 0;
         const totalGenerated = totalUsageResult.data?.reduce((sum, item) => sum + (item.images_count || 1), 0) || 0;
 
-        console.log('User stats debug:', {
-          userId,
-          remaining,
-          isPremium,
-          usedThisMonth,
-          subscription,
-          credits,
-          startOfMonth: startOfMonth.toISOString()
-        });
-
         setStats({
           generated: totalGenerated,
           remaining: remaining,
