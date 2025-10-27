@@ -315,14 +315,14 @@ class SubscriptionService {
       
       console.log(`Current count: ${currentCount}, adding: ${count}, new total: ${newCount}`);
       
-      // Update with new count
+      // Update with new count using UPDATE instead of UPSERT
       const { data: updateResult, error: updateError } = await supabase
         .from('user_profiles')
-        .upsert({
-          id: userId,
+        .update({
           total_images_generated: newCount,
           updated_at: new Date().toISOString()
         })
+        .eq('id', userId)
         .select();
       
       if (updateError) {
