@@ -296,29 +296,24 @@ class SubscriptionService {
     }
   }
 
-  async updateTotalImagesGenerated(userId: string, count: number): Promise<void> {
+  async updateTotalImagesGenerated(userId: string, count: number, userEmail?: string): Promise<void> {
     try {
-      // Get user email from auth.users and current count from user_profiles
-      const [authResult, profileResult] = await Promise.all([
-        supabase.auth.admin.getUserById(userId),
-        supabase.from('user_profiles').select('total_images_generated').eq('id', userId).single()
-      ]);
+      // Get current count from user_profiles
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('total_images_generated')
+        .eq('id', userId)
+        .single();
       
-      const userEmail = authResult.data.user?.email;
-      const currentCount = profileResult.data?.total_images_generated || 0;
+      const currentCount = profile?.total_images_generated || 0;
       const newCount = currentCount + count;
-      
-      if (!userEmail) {
-        console.error('No email found for user:', userId);
-        return;
-      }
       
       // Upsert with email to satisfy NOT NULL constraint
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
           id: userId,
-          email: userEmail,
+          email: userEmail || 'unknown@example.com',
           total_images_generated: newCount,
           updated_at: new Date().toISOString()
         });

@@ -102,7 +102,7 @@ const AppContent: React.FC = () => {
       
       // Update total images generated count
       try {
-        await subscriptionService.updateTotalImagesGenerated(user.id, successfulImages);
+        await subscriptionService.updateTotalImagesGenerated(user.id, successfulImages, user.email);
       } catch (error) {
         console.error('Failed to update total images count:', error);
       }
