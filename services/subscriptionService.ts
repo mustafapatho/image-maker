@@ -315,15 +315,12 @@ class SubscriptionService {
       
       console.log(`Current count: ${currentCount}, adding: ${count}, new total: ${newCount}`);
       
-      // Update with new count using UPDATE instead of UPSERT
+      // Use direct SQL to avoid constraint issues
       const { data: updateResult, error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
-          total_images_generated: newCount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select();
+        .rpc('update_user_total_images', {
+          user_id: userId,
+          new_count: newCount
+        });
       
       if (updateError) {
         console.error('Failed to update total_images_generated:', updateError);

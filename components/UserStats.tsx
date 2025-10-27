@@ -22,16 +22,24 @@ const UserStats: React.FC<UserStatsProps> = ({ userId }) => {
           subscriptionService.getUserCredits(userId)
         ]);
         
-        // Calculate monthly usage from image_history
+        // Calculate total and monthly usage from image_history
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const { data: monthlyUsage } = await supabase
-          .from('image_history')
-          .select('id')
-          .eq('user_id', userId)
-          .gte('created_at', startOfMonth.toISOString());
         
-        const usedThisMonth = monthlyUsage?.length || 0;
+        const [monthlyUsageResult, totalUsageResult] = await Promise.all([
+          supabase
+            .from('image_history')
+            .select('images_count')
+            .eq('user_id', userId)
+            .gte('created_at', startOfMonth.toISOString()),
+          supabase
+            .from('image_history')
+            .select('images_count')
+            .eq('user_id', userId)
+        ]);
+        
+        const usedThisMonth = monthlyUsageResult.data?.reduce((sum, item) => sum + (item.images_count || 1), 0) || 0;
+        const totalGenerated = totalUsageResult.data?.reduce((sum, item) => sum + (item.images_count || 1), 0) || 0;
 
         console.log('User stats debug:', {
           userId,
@@ -44,7 +52,7 @@ const UserStats: React.FC<UserStatsProps> = ({ userId }) => {
         });
 
         setStats({
-          generated: usedThisMonth,
+          generated: totalGenerated,
           remaining: remaining,
           isPremium
         });
