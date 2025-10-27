@@ -315,17 +315,16 @@ class SubscriptionService {
       const currentCount = profile?.total_images_generated || 0;
       const newCount = currentCount + count;
       
-      console.log('Upserting:', { userId, email: userEmail, newCount });
+      console.log('Updating:', { userId, newCount });
       
-      // Upsert with email to satisfy NOT NULL constraint
+      // Use UPDATE instead of UPSERT to avoid trigger issues
       const { error } = await supabase
         .from('user_profiles')
-        .upsert({
-          id: userId,
-          email: userEmail,
+        .update({
           total_images_generated: newCount,
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('id', userId);
       
       if (error) {
         console.error('Failed to update total_images_generated:', error);
