@@ -134,19 +134,15 @@ export const generateProductImages = async (
   const resolvedData = resolveOptionKeys(formData);
   let prompt = category.promptTemplate(resolvedData);
   prompt = `CREATE A VISUAL IMAGE OUTPUT ONLY. DO NOT PROVIDE TEXT DESCRIPTIONS. GENERATE IMAGE: ${prompt}. OUTPUT FORMAT: IMAGE DATA ONLY.`;
-  console.log("Generated Prompt:", prompt);
 
   // Collect all image files from formData
   const imageKeys = ['productImage', 'modelImage', 'backgroundReferenceImage', 'consistencyReferenceImage', 'clothingImage', 'personImage'];
   const imageFiles: File[] = [];
   
-  console.log("Form data keys:", Object.keys(formData));
-  
   for (const key of imageKeys) {
     const file = formData[key] as File;
     if (file instanceof File) {
       imageFiles.push(file);
-      console.log(`Adding ${key} to image generation:`, file.name);
     }
   }
 
@@ -154,27 +150,18 @@ export const generateProductImages = async (
   const imageDataPromises = imageFiles.map(file => fileToBase64(file));
   const imageDataArray = await Promise.all(imageDataPromises);
   
-  console.log("Total images being sent:", imageDataArray.length);
-  console.log("Image files found:", imageFiles.map(f => f.name));
-  console.log("Image data array structure:", imageDataArray.map(img => ({ mimeType: img.mimeType, dataLength: img.data.length })));
-  
   const generateSingleImage = async (retryCount = 0): Promise<string> => {
     const response = await callGemini(prompt, imageDataArray, 'gemini-2.5-flash-image-preview');
     
-    console.log("Full API response:", JSON.stringify(response, null, 2));
-    
     if (!response?.candidates?.length) {
-      console.error("No candidates in response:", response);
       throw new Error("No candidates returned from AI");
     }
     
     const candidate = response.candidates[0];
-    console.log("Candidate structure:", JSON.stringify(candidate, null, 2));
     
     // Handle safety/policy rejections with fallback strategies
     if (candidate.finishReason === 'IMAGE_OTHER' || candidate.finishReason === 'SAFETY') {
       if (retryCount < 2) {
-        console.log('Safety block detected, trying fallback approach...');
         // Try with only the main product image (remove model/person images)
         const mainImageOnly = imageDataArray.filter((_, index) => index === 0);
         const fallbackResponse = await callGemini(prompt, mainImageOnly, 'gemini-2.5-flash-image-preview');
@@ -194,7 +181,6 @@ export const generateProductImages = async (
     }
     
     if (!candidate?.content?.parts?.length) {
-      console.error("Invalid candidate structure:", candidate);
       throw new Error("Invalid response structure from AI");
     }
     
@@ -228,7 +214,6 @@ export const generateProductImages = async (
             .catch(error => {
                 completedCount++;
                 onProgress(completedCount, numImages);
-                console.error('Image generation failed:', error.message);
                 return { status: 'rejected' as const, reason: error };
             })
     );
