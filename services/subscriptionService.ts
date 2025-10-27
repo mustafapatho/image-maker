@@ -151,33 +151,48 @@ class SubscriptionService {
       .update({ status: 'completed', payment_date: now.toISOString() })
       .eq('reference_id', referenceId);
 
-    // Set user as premium
+    // Ensure user profile exists and set as premium
     await supabase.from('user_profiles')
-      .update({ is_premium: true })
-      .eq('id', userId);
+      .upsert({ 
+        id: userId, 
+        is_premium: true,
+        updated_at: now.toISOString()
+      });
 
     return subscription;
   }
 
   async addImages(userId: string, numImages: number) {
-    const { data: credits } = await supabase.from('user_credits')
+    const { data: credits, error } = await supabase.from('user_credits')
       .select('*')
       .eq('user_id', userId)
       .single();
 
     if (credits) {
       await supabase.from('user_credits')
-        .update({ credits_available: credits.credits_available + numImages })
+        .update({ 
+          credits_available: credits.credits_available + numImages,
+          updated_at: new Date().toISOString()
+        })
         .eq('user_id', userId);
     } else {
       await supabase.from('user_credits')
-        .insert({ user_id: userId, credits_available: numImages });
+        .insert({ 
+          user_id: userId, 
+          credits_available: numImages,
+          credits_used: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
     }
 
-    // Set user as premium
+    // Ensure user profile exists and set as premium
     await supabase.from('user_profiles')
-      .update({ is_premium: true })
-      .eq('id', userId);
+      .upsert({ 
+        id: userId, 
+        is_premium: true,
+        updated_at: new Date().toISOString()
+      });
   }
 
   async useImage(userId: string): Promise<boolean> {
@@ -199,13 +214,19 @@ class SubscriptionService {
     // Try credits
     const credits = await this.getUserCredits(userId);
     if (credits && credits.credits_available > 0) {
-      await supabase.from('user_credits')
+      const { error } = await supabase.from('user_credits')
         .update({ 
           credits_available: credits.credits_available - 1,
-          credits_used: credits.credits_used + 1,
-          last_used_at: new Date().toISOString()
+          credits_used: (credits.credits_used || 0) + 1,
+          last_used_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);
+      
+      if (error) {
+        console.error('Error updating credits:', error);
+        return false;
+      }
       return true;
     }
     

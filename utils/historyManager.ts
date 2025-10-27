@@ -32,7 +32,7 @@ export const saveToHistory = async (
     }
     
     // Update user's total images generated
-    const { data: currentProfile } = await supabase
+    const { data: currentProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('total_images_generated')
       .eq('id', userId)
@@ -40,12 +40,17 @@ export const saveToHistory = async (
     
     const currentCount = currentProfile?.total_images_generated || 0;
     
-    await supabase
+    const { error: updateError } = await supabase
       .from('user_profiles')
       .upsert({
         id: userId,
-        total_images_generated: currentCount + images.length
+        total_images_generated: currentCount + images.length,
+        updated_at: new Date().toISOString()
       });
+    
+    if (updateError) {
+      console.error('Error updating total_images_generated:', updateError);
+    }
   } catch (error) {
     console.error('Error saving to history:', error);
   }
