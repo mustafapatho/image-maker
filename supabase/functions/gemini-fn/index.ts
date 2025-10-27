@@ -27,10 +27,19 @@ serve(async (req) => {
       throw new Error('gemini_api_key not configured')
     }
 
+    const imageParts = [];
+    if (imageData) {
+      if (Array.isArray(imageData)) {
+        imageParts.push(...imageData.map(img => ({ inline_data: { mime_type: img.mimeType, data: img.data } })));
+      } else {
+        imageParts.push({ inline_data: { mime_type: imageData.mimeType, data: imageData.data } });
+      }
+    }
+
     const body: any = {
       contents: [{
         parts: [
-          ...(imageData ? [{ inline_data: { mime_type: imageData.mimeType, data: imageData.data } }] : []),
+          ...imageParts,
           { text: prompt }
         ]
       }]

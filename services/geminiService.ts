@@ -118,22 +118,34 @@ export const generateProductImages = async (
   numImages: number,
   onProgress: (current: number, total: number) => void
 ): Promise<string[]> => {
-  
+
   const imageFile = formData.productImage as File;
   if (!imageFile) {
     throw new Error("Image file is missing.");
   }
-  
-  
+
+
   const resolvedData = resolveOptionKeys(formData);
   let prompt = category.promptTemplate(resolvedData);
   prompt = `CREATE A VISUAL IMAGE OUTPUT ONLY. DO NOT PROVIDE TEXT DESCRIPTIONS. GENERATE IMAGE: ${prompt}. OUTPUT FORMAT: IMAGE DATA ONLY.`;
   console.log("Generated Prompt:", prompt);
-  
-  const mainImageData = await fileToBase64(imageFile);
+
+  // Collect all image files from formData
+  const imageKeys = ['productImage', 'modelImage', 'backgroundReferenceImage', 'consistencyReferenceImage', 'clothingImage'];
+  const imageFiles: File[] = [];
+  for (const key of imageKeys) {
+    const file = formData[key] as File;
+    if (file instanceof File) {
+      imageFiles.push(file);
+    }
+  }
+
+  // Convert all images to base64
+  const imageDataPromises = imageFiles.map(file => fileToBase64(file));
+  const imageDataArray = await Promise.all(imageDataPromises);
   
   const generateSingleImage = async (retryCount = 0): Promise<string> => {
-    const response = await callGemini(prompt, mainImageData, 'gemini-2.5-flash-image-preview');
+    const response = await callGemini(prompt, imageDataArray, 'gemini-2.5-flash-image-preview');
     
     if (!response?.candidates?.length) {
       throw new Error("No candidates returned from AI");
