@@ -100,6 +100,13 @@ const AppContent: React.FC = () => {
         await subscriptionService.useImage(user.id);
       }
       
+      // Update total images generated count
+      try {
+        await subscriptionService.updateTotalImagesGenerated(user.id, successfulImages);
+      } catch (error) {
+        console.error('Failed to update total images count:', error);
+      }
+      
       setGeneratedImages(images);
       
       // Save to history

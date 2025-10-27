@@ -296,6 +296,36 @@ class SubscriptionService {
     }
   }
 
+  async updateTotalImagesGenerated(userId: string, count: number): Promise<void> {
+    try {
+      // Get current count
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('total_images_generated')
+        .eq('id', userId)
+        .single();
+      
+      const currentCount = profile?.total_images_generated || 0;
+      
+      // Update with new count
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          id: userId,
+          total_images_generated: currentCount + count,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (error) {
+        console.error('Failed to update total_images_generated:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateTotalImagesGenerated:', error);
+      throw error;
+    }
+  }
+
   async ensurePremiumSubscription(userId: string) {
     const subscription = await this.getCurrentSubscription(userId);
     const now = new Date();
