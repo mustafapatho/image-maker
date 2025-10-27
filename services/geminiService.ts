@@ -161,12 +161,18 @@ export const generateProductImages = async (
   const generateSingleImage = async (retryCount = 0): Promise<string> => {
     const response = await callGemini(prompt, imageDataArray, 'gemini-2.5-flash-image-preview');
     
+    console.log("Full API response:", JSON.stringify(response, null, 2));
+    
     if (!response?.candidates?.length) {
+      console.error("No candidates in response:", response);
       throw new Error("No candidates returned from AI");
     }
     
     const candidate = response.candidates[0];
+    console.log("Candidate structure:", JSON.stringify(candidate, null, 2));
+    
     if (!candidate?.content?.parts?.length) {
+      console.error("Invalid candidate structure:", candidate);
       throw new Error("Invalid response structure from AI");
     }
     
