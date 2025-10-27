@@ -297,40 +297,38 @@ class SubscriptionService {
   }
 
   async updateTotalImagesGenerated(userId: string, count: number): Promise<void> {
-    console.log(`Updating total_images_generated for user ${userId} with count ${count}`);
     try {
-      // Get current count
-      const { data: profile, error: selectError } = await supabase
-        .from('user_profiles')
-        .select('total_images_generated')
-        .eq('id', userId)
-        .single();
+      // Get user email from auth.users and current count from user_profiles
+      const [authResult, profileResult] = await Promise.all([
+        supabase.auth.admin.getUserById(userId),
+        supabase.from('user_profiles').select('total_images_generated').eq('id', userId).single()
+      ]);
       
-      if (selectError && selectError.code !== 'PGRST116') {
-        console.error('Error selecting profile:', selectError);
-      }
-      
-      const currentCount = profile?.total_images_generated || 0;
+      const userEmail = authResult.data.user?.email;
+      const currentCount = profileResult.data?.total_images_generated || 0;
       const newCount = currentCount + count;
       
-      console.log(`Current count: ${currentCount}, adding: ${count}, new total: ${newCount}`);
-      
-      // Use direct SQL to avoid constraint issues
-      const { data: updateResult, error: updateError } = await supabase
-        .rpc('update_user_total_images', {
-          user_id: userId,
-          new_count: newCount
-        });
-      
-      if (updateError) {
-        console.error('Failed to update total_images_generated:', updateError);
-        throw updateError;
+      if (!userEmail) {
+        console.error('No email found for user:', userId);
+        return;
       }
       
-      console.log('Successfully updated total_images_generated:', updateResult);
+      // Upsert with email to satisfy NOT NULL constraint
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          id: userId,
+          email: userEmail,
+          total_images_generated: newCount,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (error) {
+        console.error('Failed to update total_images_generated:', error);
+        throw error;
+      }
     } catch (error) {
       console.error('Error in updateTotalImagesGenerated:', error);
-      throw error;
     }
   }
 
