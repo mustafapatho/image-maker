@@ -13,7 +13,16 @@ serve(async (req) => {
 
   try {
     console.log('Edge Function called');
-    const { prompt, imageData, model = 'gemini-2.5-flash-image-preview' } = await req.json()
+    
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request JSON:', parseError);
+      throw new Error('Invalid JSON in request body');
+    }
+    
+    const { prompt, imageData, model = 'gemini-2.5-flash-image-preview' } = requestBody;
     console.log('Request data:', { 
       model, 
       hasImageData: !!imageData, 
@@ -21,6 +30,10 @@ serve(async (req) => {
       imageDataLength: Array.isArray(imageData) ? imageData.length : (imageData ? 1 : 0),
       promptLength: prompt?.length 
     });
+    
+    if (!prompt) {
+      throw new Error('Prompt is required');
+    }
     
     // @ts-ignore
     const geminiKey = Deno.env.get('gemini_api_key')
@@ -60,15 +73,27 @@ serve(async (req) => {
       }
     }
 
+    console.log('Calling Gemini API with body:', JSON.stringify(body, null, 2));
+    
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     })
 
+    console.log('Gemini API response status:', response.status);
+    
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error?.message || 'Gemini API error')
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        const errorText = await response.text();
+        console.error('Gemini API error (non-JSON):', errorText);
+        throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      }
+      console.error('Gemini API error:', errorData);
+      throw new Error(errorData.error?.message || `Gemini API error: ${response.status}`);
     }
 
     const data = await response.json()
@@ -87,9 +112,18 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Edge Function Error:', error);
+    console.error('Error stack:', error.stack);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorResponse = {
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+      details: error instanceof Error ? error.stack : String(error)
+    };
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify(errorResponse),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 

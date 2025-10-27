@@ -12,31 +12,37 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function callGemini(prompt: string, imageData?: any, model?: string) {
-  const { data, error } = await supabase.functions.invoke("gemini-fn", {
-    body: { prompt, imageData, model },
-  });
-  
-  if (error) {
-    console.error("Edge Function Error:", error);
-    throw new Error(error.message || 'Gemini API error');
+  try {
+    const { data, error } = await supabase.functions.invoke("gemini-fn", {
+      body: { prompt, imageData, model },
+    });
+    
+    if (error) {
+      console.error("Edge Function Error:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      throw new Error(`Edge Function Error: ${error.message || JSON.stringify(error)}`);
+    }
+
+    if (!data) {
+      throw new Error('No data returned from Edge Function');
+    }
+
+    if (data.error) {
+      console.error("Gemini API Error:", data.error);
+      console.error("Full error response:", JSON.stringify(data, null, 2));
+      throw new Error(`Gemini API Error: ${data.error}`);
+    }
+
+    if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+      console.error("Invalid API response:", data);
+      throw new Error('Invalid response from Gemini API - no candidates returned');
+    }
+
+    return data;
+  } catch (error) {
+    console.error("callGemini error:", error);
+    throw error;
   }
-
-  if (!data) {
-    throw new Error('No data returned from Edge Function');
-  }
-
-
-  if (data.error) {
-    console.error("Gemini API Error:", data.error);
-    throw new Error(data.error.message || 'Gemini API returned an error');
-  }
-
-  if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
-    console.error("Invalid API response:", data);
-    throw new Error('Invalid response from Gemini API - no candidates returned');
-  }
-
-  return data;
 }
 
 const fileToBase64 = async (file: File): Promise<{data: string, mimeType: string}> => {
@@ -150,6 +156,7 @@ export const generateProductImages = async (
   
   console.log("Total images being sent:", imageDataArray.length);
   console.log("Image files found:", imageFiles.map(f => f.name));
+  console.log("Image data array structure:", imageDataArray.map(img => ({ mimeType: img.mimeType, dataLength: img.data.length })));
   
   const generateSingleImage = async (retryCount = 0): Promise<string> => {
     const response = await callGemini(prompt, imageDataArray, 'gemini-2.5-flash-image-preview');
