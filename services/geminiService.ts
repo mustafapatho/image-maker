@@ -171,6 +171,28 @@ export const generateProductImages = async (
     const candidate = response.candidates[0];
     console.log("Candidate structure:", JSON.stringify(candidate, null, 2));
     
+    // Handle safety/policy rejections with fallback strategies
+    if (candidate.finishReason === 'IMAGE_OTHER' || candidate.finishReason === 'SAFETY') {
+      if (retryCount < 2) {
+        console.log('Safety block detected, trying fallback approach...');
+        // Try with only the main product image (remove model/person images)
+        const mainImageOnly = imageDataArray.filter((_, index) => index === 0);
+        const fallbackResponse = await callGemini(prompt, mainImageOnly, 'gemini-2.5-flash-image-preview');
+        
+        if (fallbackResponse?.candidates?.[0]?.content?.parts?.length) {
+          const fallbackCandidate = fallbackResponse.candidates[0];
+          for (const part of fallbackCandidate.content.parts) {
+            if (part.inlineData) {
+              return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
+          }
+        }
+      }
+      
+      const message = candidate.finishMessage || 'AI safety policies prevent generating this image';
+      throw new Error(`Image generation blocked: ${message}`);
+    }
+    
     if (!candidate?.content?.parts?.length) {
       console.error("Invalid candidate structure:", candidate);
       throw new Error("Invalid response structure from AI");
