@@ -297,29 +297,40 @@ class SubscriptionService {
   }
 
   async updateTotalImagesGenerated(userId: string, count: number): Promise<void> {
+    console.log(`Updating total_images_generated for user ${userId} with count ${count}`);
     try {
       // Get current count
-      const { data: profile } = await supabase
+      const { data: profile, error: selectError } = await supabase
         .from('user_profiles')
         .select('total_images_generated')
         .eq('id', userId)
         .single();
       
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('Error selecting profile:', selectError);
+      }
+      
       const currentCount = profile?.total_images_generated || 0;
+      const newCount = currentCount + count;
+      
+      console.log(`Current count: ${currentCount}, adding: ${count}, new total: ${newCount}`);
       
       // Update with new count
-      const { error } = await supabase
+      const { data: updateResult, error: updateError } = await supabase
         .from('user_profiles')
         .upsert({
           id: userId,
-          total_images_generated: currentCount + count,
+          total_images_generated: newCount,
           updated_at: new Date().toISOString()
-        });
+        })
+        .select();
       
-      if (error) {
-        console.error('Failed to update total_images_generated:', error);
-        throw error;
+      if (updateError) {
+        console.error('Failed to update total_images_generated:', updateError);
+        throw updateError;
       }
+      
+      console.log('Successfully updated total_images_generated:', updateResult);
     } catch (error) {
       console.error('Error in updateTotalImagesGenerated:', error);
       throw error;
