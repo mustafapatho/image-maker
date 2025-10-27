@@ -131,18 +131,25 @@ export const generateProductImages = async (
   console.log("Generated Prompt:", prompt);
 
   // Collect all image files from formData
-  const imageKeys = ['productImage', 'modelImage', 'backgroundReferenceImage', 'consistencyReferenceImage', 'clothingImage'];
+  const imageKeys = ['productImage', 'modelImage', 'backgroundReferenceImage', 'consistencyReferenceImage', 'clothingImage', 'personImage'];
   const imageFiles: File[] = [];
+  
+  console.log("Form data keys:", Object.keys(formData));
+  
   for (const key of imageKeys) {
     const file = formData[key] as File;
     if (file instanceof File) {
       imageFiles.push(file);
+      console.log(`Adding ${key} to image generation:`, file.name);
     }
   }
 
   // Convert all images to base64
   const imageDataPromises = imageFiles.map(file => fileToBase64(file));
   const imageDataArray = await Promise.all(imageDataPromises);
+  
+  console.log("Total images being sent:", imageDataArray.length);
+  console.log("Image files found:", imageFiles.map(f => f.name));
   
   const generateSingleImage = async (retryCount = 0): Promise<string> => {
     const response = await callGemini(prompt, imageDataArray, 'gemini-2.5-flash-image-preview');

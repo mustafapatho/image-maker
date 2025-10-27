@@ -14,7 +14,13 @@ serve(async (req) => {
   try {
     console.log('Edge Function called');
     const { prompt, imageData, model = 'gemini-2.5-flash-image-preview' } = await req.json()
-    console.log('Request data:', { model, hasImageData: !!imageData, promptLength: prompt?.length });
+    console.log('Request data:', { 
+      model, 
+      hasImageData: !!imageData, 
+      imageDataIsArray: Array.isArray(imageData),
+      imageDataLength: Array.isArray(imageData) ? imageData.length : (imageData ? 1 : 0),
+      promptLength: prompt?.length 
+    });
     
     // @ts-ignore
     const geminiKey = Deno.env.get('gemini_api_key')
@@ -35,6 +41,8 @@ serve(async (req) => {
         imageParts.push({ inline_data: { mime_type: imageData.mimeType, data: imageData.data } });
       }
     }
+    
+    console.log('Image parts count:', imageParts.length);
 
     const body: any = {
       contents: [{
