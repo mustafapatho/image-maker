@@ -66,8 +66,12 @@ serve(async (req) => {
       }]
     }
     
-    // Only add generationConfig for non-image models
-    if (!model.includes('image')) {
+    // Add generationConfig based on model type
+    if (model.includes('image')) {
+      body.generationConfig = {
+        response_modalities: ['IMAGE', 'TEXT']
+      }
+    } else {
       body.generationConfig = {
         response_mime_type: 'text/plain'
       }
