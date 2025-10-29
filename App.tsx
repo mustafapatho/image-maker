@@ -167,6 +167,7 @@ const AppContent: React.FC = () => {
     setGeneratedImages([]);
     setError(null);
     setIsGenerating(false);
+    setLastGenerationData(null); // Clear cached form data to allow fresh file uploads
   };
 
   const handleGenerateAgain = () => {
