@@ -18,6 +18,8 @@ interface HistoryProps {
 const History: React.FC<HistoryProps> = ({ onBack }) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3; // Show 3 history items per page
   const { t } = useLocalization();
   const { user } = useAuth();
 
@@ -32,6 +34,12 @@ const History: React.FC<HistoryProps> = ({ onBack }) => {
   useEffect(() => {
     loadHistory();
   }, [user]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(history.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = history.slice(startIndex, endIndex);
 
   const handleDownload = (imageUrl: string, index: number, itemId: string) => {
     try {
@@ -52,6 +60,12 @@ const History: React.FC<HistoryProps> = ({ onBack }) => {
     if (!user || !confirm(t('confirm_clear_history'))) return;
     await clearHistory(user.id);
     setHistory([]);
+    setCurrentPage(1);
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (loading) {
@@ -113,8 +127,9 @@ const History: React.FC<HistoryProps> = ({ onBack }) => {
         </button>
       </div>
 
+      {/* History Items */}
       <div className="space-y-6">
-        {history.map((item) => (
+        {currentItems.map((item) => (
           <div key={item.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">{item.categoryName}</h3>
@@ -129,6 +144,7 @@ const History: React.FC<HistoryProps> = ({ onBack }) => {
                     src={image}
                     alt={`${item.categoryName} ${index + 1}`}
                     className="w-full aspect-square object-cover rounded-lg"
+                    loading="lazy"
                   />
                   <button
                     onClick={() => handleDownload(image, index, item.id)}
@@ -143,6 +159,48 @@ const History: React.FC<HistoryProps> = ({ onBack }) => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {t('previous') || 'Previous'}
+          </button>
+          
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => goToPage(page)}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  currentPage === page
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {t('next') || 'Next'}
+          </button>
+        </div>
+      )}
+
+      {/* Page Info */}
+      <div className="text-center mt-4 text-sm text-gray-500">
+        {t('showing') || 'Showing'} {startIndex + 1}-{Math.min(endIndex, history.length)} {t('of') || 'of'} {history.length} {t('items') || 'items'}
       </div>
     </div>
   );
