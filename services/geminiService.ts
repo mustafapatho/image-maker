@@ -112,6 +112,9 @@ const resolveOptionKeys = (formData: Record<string, string | File>): Record<stri
       resolved[key] = translatedValue || value;
     } else if (typeof value === 'string') {
       resolved[key] = value;
+    } else if (value instanceof File) {
+      // Preserve a flag indicating this file field exists
+      resolved[key] = '[FILE_PROVIDED]';
     }
   }
   
